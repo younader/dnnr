@@ -23,10 +23,11 @@ version = "0.1.0"
 matplotlib = "^3.5.2"
 numpy = "^1.22.3"
 pandas = "^1.4.2"
-python = ">=3.9,<4.0"
+python = ">=3.9,<3.11"
 
-# To install PyTorch, see: https://stackoverflow.com/questions/59158044/poetry-and-pytorch
-# torch = { url = "https://download.pytorch.org/whl/cu113/torch-1.11.0%2Bcu113-cp310-cp310-linux_x86_64.whl" }
+scikit-learn = "^1.1.0"
+scipy = "^1.8.0"
+annoy = "^1.17.0"
 
 
 [tool.poetry.dev-dependencies]
@@ -101,20 +102,14 @@ warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
 module = [
-    "anyconfig",
-    "b2sdk",
-    "b2sdk.*",
-    "b2sdk.v2",
+    "annoy",
     "coverage",
-    "cookiecutter",
-    "cookiecutter.*",
-    "cpuinfo",
     "matplotlib",
     "pandas",
-    "reproducible",
     "setuptools",
     "sklearn",
     "sklearn.*",
+    "scipy.*",
     "typing_inspect",
 ]
 ignore_missing_imports = true
