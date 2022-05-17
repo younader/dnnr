@@ -11,14 +11,15 @@ from dnnr.solver import create_solver
 
 
 class DNNR(BaseEstimator, RegressorMixin):
-    """
+    """DNNR model class.
 
     Args:
         n_neighbors: number of nearest neighbors to use.
-        n_approx: number of neighbhors used in approximating the gradient
+        n_approx: number of neighbors used in approximating the gradient
         mode: Taylor approximation mode, one of `1`, `2`, `2diag`, `2diag`, `3`.
         metric: distance metric used in the nearest neighbor index
-        index: name of the index to be used for nearest neighbor.
+        index: name of the index to be used for nearest neighbor (`annoy` or
+            `kd_tree`).
         solver: name of the equation solver used in gradient computation.
     """
 
