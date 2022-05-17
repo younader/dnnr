@@ -1,0 +1,120 @@
+[tool]
+[tool.poetry]
+classifiers=[
+    'Development Status :: 2 - Pre-Alpha',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+]
+authors = ["Youssef Nadar <Your email>", "Leon Sixt <Your email>"]
+description = "Easy to use package of the DNNR regression."
+homepage = "https://github.com/younader/dnnr"
+license = "MIT"
+name = "dnnr"
+packages = [
+  {include = "dnnr"},
+  {include = "tests", format = "sdist"},
+]
+readme = "README.md"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+matplotlib = "^3.5.2"
+numpy = "^1.22.3"
+pandas = "^1.4.2"
+python = ">=3.9,<4.0"
+
+# To install PyTorch, see: https://stackoverflow.com/questions/59158044/poetry-and-pytorch
+# torch = { url = "https://download.pytorch.org/whl/cu113/torch-1.11.0%2Bcu113-cp310-cp310-linux_x86_64.whl" }
+
+
+[tool.poetry.dev-dependencies]
+black = "^22.3.0"
+cookiecutter = "^1.7.3"
+flake8 = "^4.0.1"
+mkdocs = "^1.3.0"
+mkdocs-autorefs = "^0.4.1"
+mkdocs-include-markdown-plugin = "^3.4.0"
+mkdocs-material = "^8.2.14"
+mkdocstrings = "^0.18.1"
+mypy = "^0.950"
+pip = "^22.1"
+pre-commit = "^2.19.0"
+pytest = "^7.1.2"
+pytest-cov = "^3.0.0"
+python-lsp-server = {extras = ["all"], version = "^1.4.1"}
+tox = "^3.20.1"
+twine = "^4.0.0"
+virtualenv = "^20.2.2"
+
+[tool.black]
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+include = '\.pyi?$'
+line-length = 80
+skip-string-normalization = true
+target-version = ['py39']
+
+[tool.isort]
+line_length = 80
+ensure_newline_before_comments = true
+force_grid_wrap = 0
+include_trailing_comma = true
+multi_line_output = 3
+skip_gitignore = true
+use_parentheses = true
+# you can skip files as below
+# skip_glob = docs/conf.py
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+
+
+[tool.mypy]
+python_version = 3.9
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = false
+disallow_untyped_decorators = true
+no_implicit_optional = true
+show_error_codes = true
+strict_optional = true
+warn_redundant_casts = true
+warn_return_any = false
+warn_unused_configs = true
+warn_unused_ignores = true
+
+
+[[tool.mypy.overrides]]
+module = [
+    "anyconfig",
+    "b2sdk",
+    "b2sdk.*",
+    "b2sdk.v2",
+    "coverage",
+    "cookiecutter",
+    "cookiecutter.*",
+    "cpuinfo",
+    "matplotlib",
+    "pandas",
+    "reproducible",
+    "setuptools",
+    "sklearn",
+    "sklearn.*",
+    "typing_inspect",
+]
+ignore_missing_imports = true
