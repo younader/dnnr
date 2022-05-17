@@ -4,6 +4,7 @@ from dnnr import dnnr
 
 
 def test_model() -> None:
+    np.random.seed(0)
     x = np.random.uniform(size=(100, 10))
     w = np.random.normal(size=(10, 1))
     y = x @ w
@@ -14,6 +15,7 @@ def test_model() -> None:
 
 
 def test_kd_index() -> None:
+    np.random.seed(0)
     x = np.random.uniform(size=(100, 10))
     w = np.random.normal(size=(10, 1))
     y = x @ w
