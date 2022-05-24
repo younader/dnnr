@@ -21,7 +21,8 @@ jobs:
     strategy:
       matrix:
         python-versions: ['3.9', '3.10']
-        os: ['ubuntu-latest' , 'windows-latest', 'macos-latest']
+        # os: ['ubuntu-latest' , 'windows-latest', 'macos-latest']
+        os: ['ubuntu-latest']
     runs-on: ${{ matrix.os }}
     env:
       PYTHONIOENCODING: "utf8"
