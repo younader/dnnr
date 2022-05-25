@@ -192,30 +192,6 @@ def test_numpy_grad_scaler():
 
 
 @pytest.mark.skipif(pytorch_missing, reason="no pytorch found")
-def test_pinv_backward():
-    torch.manual_seed(0)
-    A = torch.randn(4, 4, requires_grad=True)
-    pinvA = torch.linalg.pinv(A)
-
-    pinvA.backward(torch.ones(4, 4))
-    assert A.grad is not None
-
-    A_np = A.detach().numpy()
-    pinvA_np = np.linalg.pinv(A_np)
-    A_grad = scaling.NumpyInputScaling.pinv_backward(
-        np.ones_like(A_np), pinvA_np, A_np
-    )
-    print('-' * 80)
-    print('numpy grad: ')
-    print(A_grad)
-    print('-' * 80)
-    print('torch grad: ')
-    print(A.grad)
-    print('-' * 80)
-    assert np.allclose(A_grad, A.grad.numpy(), atol=1e-6)
-
-
-@pytest.mark.skipif(pytorch_missing, reason="no pytorch found")
 def test_cossim_backward():
     torch.manual_seed(0)
     a = torch.randn(4, requires_grad=True)
