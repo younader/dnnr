@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 from sklearn.metrics import mean_absolute_error
 
+from dnnr import scaling
 from dnnr.dnnr import DNNR
 
 try:
@@ -133,12 +134,13 @@ def get_torch_grad_scaler_cls():
 
             q = torch.abs(nn_y - y_pred)
 
-            vx = q - torch.mean(q)
-            vy = h - torch.mean(h)
+            vq = q - torch.mean(q)
+            vh = h - torch.mean(h)
             loss = torch.nn.CosineSimilarity(dim=0, eps=1e-4)
-            cost = loss(vx, vy) * -1
+            cost = loss(vq, vh) * -1
 
             cost.backward()
+            return cost
 
     return GradientScaler
 
@@ -146,7 +148,6 @@ def get_torch_grad_scaler_cls():
 @pytest.mark.skipif(pytorch_missing, reason="no pytorch found")
 def test_pytorch_grad_scaler():
     scaler_cls = get_torch_grad_scaler_cls()
-
     scaler = scaler_cls()
 
     channels = 10
@@ -159,3 +160,91 @@ def test_pytorch_grad_scaler():
     scaler.train_step(fsv, nn_x, nn_y, v, y)
 
     assert fsv.grad is not None
+
+
+@pytest.mark.skipif(pytorch_missing, reason="no pytorch found")
+def test_numpy_grad_scaler():
+    scaler_cls = get_torch_grad_scaler_cls()
+    scaler = scaler_cls()
+
+    torch.manual_seed(10)
+    channels = 3
+    neighbors = 6
+    y = torch.randn(1)
+    v = torch.randn(1, channels)
+    nn_x = torch.randn(neighbors, channels)
+    nn_y = torch.randn(neighbors)
+    fsv = torch.ones(1, channels, requires_grad=True)
+    cost = scaler.train_step(fsv, nn_x, nn_y, v, y)
+
+    np_scaler = scaling.NumpyInputScaling()
+    np_cost, fsv_grad = np_scaler.get_gradient(
+        fsv.detach().numpy(), nn_x.numpy(), nn_y.numpy(), v.numpy(), y.numpy()
+    )
+
+    assert np.allclose(cost.detach().numpy(), np_cost)
+
+    print("Torch:")
+    print(fsv.grad.tolist())
+    print("Numpy:")
+    print(fsv_grad.tolist())
+    assert np.allclose(fsv.grad.numpy(), fsv_grad, atol=1e-5)
+
+
+@pytest.mark.skipif(pytorch_missing, reason="no pytorch found")
+def test_pinv_backward():
+    torch.manual_seed(0)
+    A = torch.randn(4, 4, requires_grad=True)
+    pinvA = torch.linalg.pinv(A)
+
+    pinvA.backward(torch.ones(4, 4))
+    assert A.grad is not None
+
+    A_np = A.detach().numpy()
+    pinvA_np = np.linalg.pinv(A_np)
+    A_grad = scaling.NumpyInputScaling.pinv_backward(
+        np.ones_like(A_np), pinvA_np, A_np
+    )
+    print('-' * 80)
+    print('numpy grad: ')
+    print(A_grad)
+    print('-' * 80)
+    print('torch grad: ')
+    print(A.grad)
+    print('-' * 80)
+    assert np.allclose(A_grad, A.grad.numpy(), atol=1e-6)
+
+
+@pytest.mark.skipif(pytorch_missing, reason="no pytorch found")
+def test_cossim_backward():
+    torch.manual_seed(0)
+    a = torch.randn(4, requires_grad=True)
+    b = torch.randn(4, requires_grad=True)
+    cossim = torch.cosine_similarity(a, b, dim=0)
+    cossim.backward()
+
+    a_np = a.detach().numpy()
+    b_np = b.detach().numpy()
+    cossim_np = scaling.NumpyInputScaling.cossim(a_np, b_np)
+    a_grad, b_grad = scaling.NumpyInputScaling.cossim_backward(
+        np.ones(1),
+        cossim_np,
+        a_np,
+        b_np,
+    )
+    print('-' * 80)
+    print('numpy grad: ')
+    print(a_grad)
+    print('-' * 80)
+    print('torch grad: ')
+    print(a.grad)
+
+    assert np.allclose(a_grad, a.grad.numpy(), atol=1e-5)
+
+    print('-' * 80)
+    print('numpy grad: ')
+    print(b_grad.tolist())
+    print('-' * 80)
+    print('torch grad: ')
+    print(b.grad.tolist())
+    assert np.allclose(b_grad, b.grad.numpy(), atol=1e-5)
