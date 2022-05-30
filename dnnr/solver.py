@@ -20,8 +20,8 @@ class Solver(ABC):
         and `w` is a weighting of each datapoint in X.
 
         Args:
-            a (np.ndarray) with shape (n_samples, n_features)
-            b (np.ndarray) with shape (n_samples, 1)
+            a: with shape (n_samples, n_features)
+            b: with shape (n_samples, 1)
 
         Returns:
             The solution of the equation.
