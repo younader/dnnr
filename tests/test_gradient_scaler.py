@@ -1,10 +1,15 @@
+import random
 from dataclasses import dataclass
 
 import annoy
 import numpy as np
 import pytest
-from sklearn.metrics import mean_absolute_error
+import sklearn.datasets
+import sklearn.metrics as sk_metrics
+import sklearn.model_selection as sk_model_selection
+import sklearn.preprocessing as sk_preprocessing
 
+import dnnr
 from dnnr import scaling
 from dnnr.dnnr import DNNR
 
@@ -17,6 +22,8 @@ except ImportError:
 
 
 def get_torch_grad_scaler_cls():
+    # This pytorch class is imported from the paper repo
+    # and is used to check the gradient computed with numpy.
     @dataclass
     class GradientScaler:
         """
@@ -32,7 +39,7 @@ def get_torch_grad_scaler_cls():
             n_approx = min(int(X_train.shape[0] / 2), X_train.shape[1] * 6)
             model = DNNR(n_approx=n_approx)
             model.fit(X_train, y_train)
-            return mean_absolute_error(y_test, model.predict(X_test))
+            return sk_metrics.ean_absolute_error(y_test, model.predict(X_test))
 
         def neigh_scale(self, X_train, y_train, X_test=None, y_test=None):
             fsv = torch.full(
@@ -178,7 +185,7 @@ def test_numpy_grad_scaler():
     cost = scaler.train_step(fsv, nn_x, nn_y, v, y)
 
     np_scaler = scaling.NumpyInputScaling()
-    np_cost, fsv_grad = np_scaler.get_gradient(
+    np_cost, fsv_grad = np_scaler._get_gradient(
         fsv.detach().numpy(), nn_x.numpy(), nn_y.numpy(), v.numpy(), y.numpy()
     )
 
@@ -201,8 +208,8 @@ def test_cossim_backward():
 
     a_np = a.detach().numpy()
     b_np = b.detach().numpy()
-    cossim_np = scaling.NumpyInputScaling.cossim(a_np, b_np)
-    a_grad, b_grad = scaling.NumpyInputScaling.cossim_backward(
+    cossim_np = scaling.NumpyInputScaling._cossim(a_np, b_np)
+    a_grad, b_grad = scaling.NumpyInputScaling._cossim_backward(
         np.ones(1),
         cossim_np,
         a_np,
@@ -224,3 +231,100 @@ def test_cossim_backward():
     print('torch grad: ')
     print(b.grad.tolist())
     assert np.allclose(b_grad, b.grad.numpy(), atol=1e-5)
+
+
+def test_scaling_on_california():
+    cali = sklearn.datasets.fetch_california_housing()
+    target = cali.target
+    std_scaler = sk_preprocessing.StandardScaler()
+
+    data = std_scaler.fit_transform(cali.data)
+
+    # speedup the test
+    data = data[:1000]
+    target = target[:1000]
+
+    X_train, X_test, y_train, y_test = sk_model_selection.train_test_split(
+        data, target, test_size=0.15, random_state=0
+    )
+
+    vanilla_model = dnnr.DNNR()
+    idenity_scaler = scaling.Identity()
+    idenity_scaler.fit(X_train, y_train)
+    assert (idenity_scaler.transform(X_train) == X_train).all()
+    vanilla_model.fit(idenity_scaler.transform(X_train), y_train)
+    vanilla_r2 = vanilla_model.score(X_test, y_test)
+
+    optimizers = [
+        ('sgd', dict(lr=0.03)),
+        ('rmsprop', dict(lr=1e-3)),
+    ]
+    for opt, opt_kwargs in optimizers:
+        scaler = scaling.NumpyInputScaling(
+            n_epochs=1,
+            fail_on_nan=True,
+            show_progress=True,
+            random=random.Random(0),
+            optimizer=opt,
+            optimizer_params=opt_kwargs,
+        )
+
+        scaler.fit(X_train, y_train)
+
+        scaled_model = dnnr.DNNR()
+        scaled_model.fit(scaler.transform(X_train), y_train)
+        scaled_r2 = scaled_model.score(scaler.transform(X_test), y_test)
+
+        print('-' * 80)
+        print(opt, 'Scaling data')
+        print(scaler.scaling_history)
+        print('-' * 80)
+        print(opt, 'Scores data')
+        print(scaler.scores_history)
+        print('-' * 80)
+        print(opt, 'scaling', scaler.scaling_)
+        print('-' * 80)
+        print('Unscaled R2:', vanilla_r2)
+        print(opt, 'Scaled R2:', scaled_r2)
+        assert scaled_r2 > vanilla_r2
+
+
+def test_scaling_nans():
+    def get_nans(
+        # self: scaling.NumpyInputScaling,
+        fsv: np.ndarray,
+        nn_x: np.ndarray,
+        nn_y: np.ndarray,
+        v: np.ndarray,
+        y: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        return np.nan * fsv.sum(), np.nan * fsv
+
+    scaler_should_fail = scaling.NumpyInputScaling(
+        n_epochs=1,
+        fail_on_nan=True,
+        show_progress=True,
+        random=random.Random(0),
+        optimizer='sgd',
+    )
+
+    scaler_should_fail._get_gradient = get_nans  # type: ignore
+
+    np.random.seed(0)
+    data = np.random.normal(size=(50, 3))
+    target = np.random.normal(size=(50,))
+
+    with pytest.raises(RuntimeError):
+        scaler_should_fail.fit(data, target)
+
+    scaler_should_warn = scaling.NumpyInputScaling(
+        n_epochs=1,
+        fail_on_nan=False,
+        show_progress=True,
+        random=random.Random(0),
+        optimizer='sgd',
+    )
+    scaler_should_warn._get_gradient = get_nans  # type: ignore
+
+    with pytest.warns():
+        scaler_should_warn.fit(data, target)
