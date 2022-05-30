@@ -192,6 +192,8 @@ class NumpyInputScaling(InputScaling):
             split_size = (
                 val_size if val_size is not None else int(0.1 * len(X_train))
             )
+            if split_size < 10:
+                raise ValueError("Split size too small")
             X_train, X_val, y_train, y_val = model_selection.train_test_split(
                 X_train,
                 y_train,
@@ -207,9 +209,7 @@ class NumpyInputScaling(InputScaling):
             n_approx = min(int(X_train.shape[0] / 2), X_train.shape[1] * 6)
             model = dnnr.DNNR(n_approx=n_approx)
             model.fit(scaling * X_train, y_train)
-            return sk_metrics.mean_absolute_error(
-                y_val, model.predict(scaling * X_val)
-            )
+            return sk_metrics.r2_score(y_val, model.predict(scaling * X_val))
 
         def handle_possible_nans(grad: np.ndarray) -> bool:
             if not np.isfinite(grad).all():
@@ -221,7 +221,7 @@ class NumpyInputScaling(InputScaling):
                 )
 
                 self.scaling_ = self.scaling_history[
-                    np.argmin(self.scores_history)
+                    np.argmax(self.scores_history)
                 ]
                 return True
             else:
@@ -282,7 +282,7 @@ class NumpyInputScaling(InputScaling):
             self.scaling_history.append(scaling.copy())
             self.scores_history.append(score())
 
-        best_scaling = self.scaling_history[np.argmin(self.scores_history)]
+        best_scaling = self.scaling_history[np.argmax(self.scores_history)]
         self.scaling_ = best_scaling
         return best_scaling
 

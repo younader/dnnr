@@ -311,8 +311,8 @@ def test_scaling_nans():
     scaler_should_fail._get_gradient = get_nans  # type: ignore
 
     np.random.seed(0)
-    data = np.random.normal(size=(50, 3))
-    target = np.random.normal(size=(50,))
+    data = np.random.normal(size=(200, 3))
+    target = np.random.normal(size=(200,))
 
     with pytest.raises(RuntimeError):
         scaler_should_fail.fit(data, target)
