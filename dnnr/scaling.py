@@ -195,7 +195,7 @@ class NumpyInputScaling(InputScaling):
             X_train, X_val, y_train, y_val = model_selection.train_test_split(
                 X_train,
                 y_train,
-                val_size=split_size,
+                test_size=split_size,
                 random_state=self.random.randint(0, 2**32 - 1),
             )
 
