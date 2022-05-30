@@ -6,7 +6,6 @@ import random as random_mod
 import warnings
 from typing import Any, Optional, Union
 
-import annoy
 import numpy as np
 import scipy.optimize
 import scipy.spatial.distance
@@ -17,6 +16,7 @@ import tqdm.auto as tqdm
 from sklearn import model_selection
 
 import dnnr
+from dnnr import nn_index
 
 
 class InputScaling(metaclass=abc.ABCMeta):
@@ -148,12 +148,15 @@ class NumpyInputScaling(InputScaling):
     n_trees: int = 25  # Number of trees in the Annoy index
     show_progress: bool = False
     fail_on_nan: bool = False
+    index: Union[str, type[nn_index.BaseIndex]] = 'annoy'
+    index_kwargs: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     def __post_init__(self):
         self.scaling_: Optional[np.ndarray] = None
         self.scaling_history: list = []
         self.scores_history: list = []
         self.costs_history: list = []
+        self.index_cls = nn_index.get_index_class(self.index)
         self._fitted: bool = False
 
     def transform(self, X: np.ndarray) -> np.ndarray:
@@ -254,10 +257,7 @@ class NumpyInputScaling(InputScaling):
         self.scaling_history.append(scaling.copy())
         self.scores_history.append(score())
         for epoch in tqdm.trange(self.n_epochs, disable=not self.show_progress):
-            t1 = annoy.AnnoyIndex(n_features, metric="euclidean")
-            for i, v in zip(range(len(X_train)), X_train * scaling):
-                t1.add_item(i, v)
-            t1.build(self.n_trees)
+            index = self.index_cls.build(scaling * X_train, **self.index_kwargs)
 
             train_index = list(range(len(X_train)))
             if self.shuffle:
@@ -265,7 +265,8 @@ class NumpyInputScaling(InputScaling):
             for idx in train_index:
                 v = X_train[idx]
                 y = y_train[idx]
-                indices = t1.get_nns_by_vector(v * scaling[0], batch_size)
+                indices, _ = index.query_knn(v * scaling[0], batch_size)
+                # skip `v` itself
                 indices = indices[1:]
                 nn_x = X_train[indices]
                 nn_y = y_train[indices]

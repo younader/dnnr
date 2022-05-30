@@ -1,13 +1,18 @@
+from __future__ import annotations
+
 import abc
-from typing import Any
+from typing import Any, TypeVar, Union, cast
 
 import numpy as np
 from sklearn.neighbors import KDTree
 
+T = TypeVar('T')
+
 
 class BaseIndex(metaclass=abc.ABCMeta):
+    @classmethod
     @abc.abstractmethod
-    def build(self, x: np.ndarray, **kwargs: dict[str, Any]) -> None:
+    def build(cls: type[T], x: np.ndarray, **kwargs: dict[str, Any]) -> T:
         """Builds the index.
 
         Args:
@@ -32,7 +37,11 @@ class BaseIndex(metaclass=abc.ABCMeta):
 
 
 class KDTreeIndex(BaseIndex):
-    def build(self, x: np.ndarray, **kwargs: dict[str, Any]) -> None:
+    @classmethod
+    def build(cls, x: np.ndarray, **kwargs: dict[str, Any]) -> KDTreeIndex:
+        return cls(x, **kwargs)
+
+    def __init__(self, x: np.ndarray, **kwargs: dict[str, Any]) -> None:
         self.index = KDTree(x, **kwargs)
 
     def query_knn(self, v: np.ndarray, k: int) -> tuple[np.ndarray, np.ndarray]:
@@ -50,14 +59,16 @@ class AnnoyIndex(BaseIndex):
         self.metric = metric
         self.index = annoy.AnnoyIndex(self.vector_length, self.metric)
 
-    def build(self, x: np.ndarray, **kwargs: dict[str, Any]) -> None:
-
-        n_trees = 50
+    @classmethod
+    def build(cls, x: np.ndarray, **kwargs: dict[str, Any]) -> AnnoyIndex:
+        n_trees = kwargs.get('n_trees', 50)
+        metric = cast(str, kwargs.get('metric', 'euclidean'))
+        index = AnnoyIndex(x.shape[1], metric=metric)
 
         for i, v in zip(range(len(x)), x):
-            self.index.add_item(i, v)
-
-        self.index.build(n_trees)
+            index.index.add_item(i, v)
+        index.index.build(n_trees)
+        return index
 
     def query_knn(self, v: np.ndarray, k: int) -> tuple[np.ndarray, np.ndarray]:
         indices, distances = self.index.get_nns_by_vector(
@@ -66,19 +77,18 @@ class AnnoyIndex(BaseIndex):
         return indices, distances
 
 
-def create_index(index: str, metric: str, vector_length: int) -> BaseIndex:
-    """
-    returns the corresponding index based on the passed string
+def get_index_class(index: Union[type[BaseIndex], str]) -> type[BaseIndex]:
+    """Returns the corresponding index class based on the passed string.
 
     Args:
-        index (string) : name of the index to be created
-        metric (string) : distance metric to be used in the index
-        vector_length (int) : the feature length, required for the creation of
-            the index.
+        index: either a string of the index name or a class
     """
+    if isinstance(index, type) and issubclass(index, BaseIndex):
+        return index
+
     if index == "annoy":
-        return AnnoyIndex(vector_length, metric)
+        return AnnoyIndex
     elif index == "kd_tree":
-        return KDTreeIndex()
+        return KDTreeIndex
     else:
         raise ValueError(f"Index {index} not supported")

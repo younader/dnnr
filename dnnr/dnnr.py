@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model import LinearRegression
 
-from dnnr.nn_index import create_index
+from dnnr import nn_index
 from dnnr.solver import create_solver
 
 
@@ -33,7 +33,8 @@ class DNNR(BaseEstimator, RegressorMixin):
         n_approx: int = 32,
         mode: str = "1",
         metric: str = "euclidean",
-        index: str = "annoy",
+        index: Union[str, type[nn_index.BaseIndex]] = "annoy",
+        index_kwargs: dict = {},
         solver: str = "lr",
         scaling: str = "None",
         precompute: bool = False,
@@ -44,7 +45,11 @@ class DNNR(BaseEstimator, RegressorMixin):
         self.n_neighbors = n_neighbors
         self.n_approx = n_approx
         self.metric = metric
-        self.index_name = index
+        if isinstance(index, str):
+            self.index_cls = nn_index.get_index_class(index)
+        else:
+            self.index_cls = index
+        self.index_kwargs = index_kwargs
         self.solver_name = solver
         self.precompute_gradients = precompute
         self.weighted = weighted
@@ -113,7 +118,8 @@ class DNNR(BaseEstimator, RegressorMixin):
         # create solver object
         self.solver = create_solver(self.solver_name)
         # create and build the nearest neighbhors index
-        self.index = create_index(self.index_name, self.metric, n)
+
+        self.index = self.index_cls.build(X_train, **self.index_kwargs)
         fsv = np.ones(n)
         if self.precompute_gradients:
             self._precompute_gradients(X_train, y_train)
