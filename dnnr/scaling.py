@@ -139,7 +139,7 @@ class NumpyInputScaling(InputScaling):
     optimizer: Union[str, type[_Optimizer]] = SGD
     optimizer_params: dict[str, Any] = dataclasses.field(default_factory=dict)
     shuffle: bool = True
-    epsilon = 1e-6
+    epsilon: float = 1e-6
     random: random_mod.Random = dataclasses.field(
         default_factory=lambda: random_mod.Random(
             random_mod.randint(0, 2**32 - 1)
