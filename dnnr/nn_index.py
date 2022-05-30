@@ -11,7 +11,7 @@ class BaseIndex(metaclass=abc.ABCMeta):
         """Builds the index.
 
         Args:
-            x (np.ndarray) with shape (n_samples, n_features). Used to build the
+            x: with shape (n_samples, n_features). Used to build the
                 index.
             **kwargs: Additional arguments passed to the index.
         """
@@ -22,8 +22,8 @@ class BaseIndex(metaclass=abc.ABCMeta):
         """Returns the (indices, distances) of the k nearest neighbors of v.
 
         Args:
-            v (np.ndarray) with shape (n_samples, n_features)
-            k  (int) number of neighbors to return
+            v: with shape (n_samples, n_features)
+            k: number of neighbors to return
 
         Returns:
             A tuple of (indices, distances) of the k nearest neighbors of v.
@@ -47,9 +47,7 @@ class AnnoyIndex(BaseIndex):
         super().__init__()
 
         self.vector_length = vector_length
-
         self.metric = metric
-
         self.index = annoy.AnnoyIndex(self.vector_length, self.metric)
 
     def build(self, x: np.ndarray, **kwargs: dict[str, Any]) -> None:
