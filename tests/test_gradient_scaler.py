@@ -240,9 +240,11 @@ def test_scaling_on_california():
 
     data = std_scaler.fit_transform(cali.data)
 
-    # speedup the test
-    data = data[:1000]
-    target = target[:1000]
+    # speedup the test, only run on a subset of the data
+    np.random.seed(0)
+    subset = np.random.choice(data.shape[0], 5000, replace=False)
+    data = data[subset]
+    target = target[subset]
 
     X_train, X_test, y_train, y_test = sk_model_selection.train_test_split(
         data, target, test_size=0.15, random_state=0
@@ -256,7 +258,7 @@ def test_scaling_on_california():
     vanilla_r2 = vanilla_model.score(X_test, y_test)
 
     optimizers = [
-        ('sgd', dict(lr=0.03)),
+        ('sgd', dict(lr=0.01)),
         ('rmsprop', dict(lr=1e-3)),
     ]
     for opt, opt_kwargs in optimizers:
@@ -269,7 +271,7 @@ def test_scaling_on_california():
             optimizer_params=opt_kwargs,
         )
 
-        scaler.fit(X_train, y_train)
+        scaler.fit(X_train, y_train, val_size=int(0.2 * len(X_train)))
 
         scaled_model = dnnr.DNNR()
         scaled_model.fit(scaler.transform(X_train), y_train)
