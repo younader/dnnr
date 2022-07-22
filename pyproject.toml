@@ -20,14 +20,15 @@ readme = "README.md"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
+
+annoy = "^1.17.0"
 matplotlib = "^3.5.2"
 numpy = "^1.22.3"
 pandas = "^1.4.2"
 python = ">=3.8,<3.11"
-
 scikit-learn = "^1.1.0"
 scipy = "^1.8.0"
-annoy = "^1.17.0"
+tqdm = "^4.64.0"
 
 
 [tool.poetry.dev-dependencies]
@@ -48,6 +49,7 @@ python-lsp-server = {extras = ["all"], version = "^1.4.1"}
 tox = "^3.20.1"
 twine = "^4.0.0"
 virtualenv = "^20.2.2"
+tqdm = "^4.64.0"
 
 [tool.black]
 exclude = '''
@@ -111,5 +113,9 @@ module = [
     "sklearn.*",
     "scipy.*",
     "typing_inspect",
+    "tqdm",
+    "tqdm.*",
+    "torch",
+    "torch.*",
 ]
 ignore_missing_imports = true
