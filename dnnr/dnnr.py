@@ -216,9 +216,7 @@ class DNNR(BaseEstimator, RegressorMixin):
                 neigh_preds.append(prediction)
             predictions.append(np.mean(neigh_preds))
         if self.clipping:
-            predictions = np.clip(
-                predictions, a_min=self.min_y, a_max=self.max_y
-            )
+            return np.clip(predictions, a_min=self.min_y, a_max=self.max_y)
         return np.array(predictions)
 
     def point_analysis(
