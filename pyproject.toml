@@ -50,6 +50,7 @@ tox = "^3.20.1"
 twine = "^4.0.0"
 virtualenv = "^20.2.2"
 tqdm = "^4.64.0"
+tox-poetry-dev-dependencies = "^0.0.9"
 
 [tool.black]
 exclude = '''
