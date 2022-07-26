@@ -7,7 +7,7 @@ classifiers=[
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
 ]
-authors = ["Youssef Nadar <Your email>", "Leon Sixt <Your email>"]
+authors = ["Youssef Nadar <youssef.nadar@fu-berlin.de>", "Leon Sixt <github@leon-sixt.de>"]
 description = "Easy to use package of the DNNR regression."
 homepage = "https://github.com/younader/dnnr"
 license = "MIT"
