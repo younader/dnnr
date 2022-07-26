@@ -130,7 +130,6 @@ class NumpyInputScaling(InputScaling):
         optimizer_params: The parameters of the optimizer.
         epsilon: The epsilon for gradient computation.
         random: The `random.Random` instance for this class.
-        n_trees: Number of trees in the Annoy index
         show_progress: Whether to show a progress bar.
         fail_on_nan: Whether to fail on NaN values.
     """
@@ -145,7 +144,6 @@ class NumpyInputScaling(InputScaling):
             random_mod.randint(0, 2**32 - 1)
         )
     )
-    n_trees: int = 25  # Number of trees in the Annoy index
     show_progress: bool = False
     fail_on_nan: bool = False
     index: Union[str, type[nn_index.BaseIndex]] = 'annoy'
