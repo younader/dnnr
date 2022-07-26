@@ -57,6 +57,7 @@ class DNNR(BaseEstimator, RegressorMixin):
         self.scaling = scaling
         self.mode = mode
         self.clipping = clipping
+        self.vector_length = 0  # TODO fix this value
 
     def _precompute_gradients(
         self, X_train: np.ndarray, y_train: np.ndarray
@@ -215,9 +216,7 @@ class DNNR(BaseEstimator, RegressorMixin):
                 neigh_preds.append(prediction)
             predictions.append(np.mean(neigh_preds))
         if self.clipping:
-            predictions = np.clip(
-                predictions, a_min=self.min_y, a_max=self.max_y
-            )
+            return np.clip(predictions, a_min=self.min_y, a_max=self.max_y)
         return np.array(predictions)
 
     def point_analysis(

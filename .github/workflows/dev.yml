@@ -42,7 +42,7 @@ jobs:
 
       - name: test with tox
         run:
-          tox -v
+          tox
         env:
           PLATFORM: ${{ matrix.os }}
 
