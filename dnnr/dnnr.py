@@ -57,6 +57,7 @@ class DNNR(BaseEstimator, RegressorMixin):
         self.scaling = scaling
         self.mode = mode
         self.clipping = clipping
+        self.vector_length = 0  # TODO fix this value
 
     def _precompute_gradients(
         self, X_train: np.ndarray, y_train: np.ndarray
