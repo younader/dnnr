@@ -281,3 +281,7 @@ class DNNR(BaseEstimator, RegressorMixin):
             np.array(distance_importances),
             np.array(r2s),
         )
+    def __repr__(self) -> str:
+        return "DNNR(n_neighbors={n_neighbors},n_approx={n_approx})".format(n_neighbors=self.n_neighbors,n_approx=self.n_approx)
+    def __str__(self) -> str:
+        return "instance of DNNR"
