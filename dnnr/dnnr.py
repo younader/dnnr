@@ -1,65 +1,79 @@
 from __future__ import annotations
 
-from typing import Optional, Union
+import dataclasses
+from typing import Any, Optional, Union
 
 import numpy as np
-from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.linear_model import LinearRegression
+import sklearn.base
 
 from dnnr import nn_index
+from dnnr import scaling as scaling_mod
+from dnnr import solver as solver_mod
 from dnnr.solver import create_solver
 
 
-class DNNR(BaseEstimator, RegressorMixin):
+@dataclasses.dataclass
+class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
     """DNNR model class.
+
+    metric: distance metric used in the nearest neighbor index
+
+    # Order of the Approximation
+
+    The order of approximation can be controlled with the `order` argument:
+
+    - `1`: Uses first-order approximation (the gradient)
+    - `2`: The first-order and full second-order matrix (gradient & Hessian)
+    - `2diag`: First-order and diagonal of the second-order derivatives
+    - `3diag`: First-order and diagonals of the second and third-orders
+
 
     Args:
         n_neighbors: number of nearest neighbors to use.
-        n_approx: number of neighbors used in approximating the gradient
-        mode: Taylor approximation mode, one of `1`, `2`, `2diag`, `2diag`, `3`.
-        metric: distance metric used in the nearest neighbor index
+        n_approx: number of neighbors used in approximating the derivatives.
+        order: Taylor approximation order, one of `1`, `2`, `2diag`, `3diag`.
+        fit_intercept: if True, the intercept is estimated. Otherwise, the
+            point's ground truth label is used.
+        solver: name of the equation solver used to approximate the derivatives.
         index: name of the index to be used for nearest neighbor (`annoy` or
             `kd_tree`).
-        solver: name of the equation solver used in gradient computation.
+        index_kwargs: keyword arguments to be passed to the index constructor.
+        scaling: name of the scaling method to be used.
+        scaling_kwargs: keyword arguments to be passed to the scaling method.
+        precompute_derivatives: if True, the gradient is computed for each
+            training point during the `fit`. Otherwise, the gradient is computed
+            during the prediction.
+        clipping: whether to clip the predicted output to the maximum and
+            minimum of the target values of the train set: `[y_min, y_max]`.
+
     """
 
     # TODO: allow any metric that scipy.spatial.distance.pdist likes
     # TODO: allow any solver that scipy.optimize.minimize likes
     # TODO: define an index interface
 
-    def __init__(
-        self,
-        n_neighbors: int = 3,
-        n_approx: int = 32,
-        mode: str = "1",
-        metric: str = "euclidean",
-        index: Union[str, type[nn_index.BaseIndex]] = "annoy",
-        index_kwargs: dict = {},
-        solver: str = "lr",
-        scaling: str = "None",
-        precompute: bool = False,
-        weighted: bool = False,
-        clipping: bool = False,
-    ) -> None:
+    n_neighbors: int = 3
+    n_approx: int = 32
+    order: str = "1"
+    fit_intercept = False
+    solver: Union[str, solver_mod.Solver] = "linear_regression"
+    index: Union[str, type[nn_index.BaseIndex]] = "annoy"
+    index_kwargs: dict[str, Any] = dataclasses.field(default_factory=dict)
+    scaling: Union[None, str, type[scaling_mod.InputScaling]] = "learned"
+    scaling_kwargs: dict[str, Any] = dataclasses.field(default_factory=dict)
+    precompute_derivatives: bool = False
+    clipping: bool = False
 
-        self.n_neighbors = n_neighbors
-        self.n_approx = n_approx
-        self.metric = metric
-        if isinstance(index, str):
-            self.index_cls = nn_index.get_index_class(index)
+    def __post_init__(self):
+        if isinstance(self.index, str):
+            self.index_cls = nn_index.get_index_class(self.index)
         else:
-            self.index_cls = index
-        self.index_kwargs = index_kwargs
-        self.solver_name = solver
-        self.precompute_gradients = precompute
-        self.weighted = weighted
-        self.gradients: list[np.ndarray] = []
-        self.scaling = scaling
-        self.mode = mode
-        self.clipping = clipping
-        self.vector_length = 0  # TODO fix this value
+            self.index_cls = self.index
+        self.derivatives_: Optional[list[np.ndarray]] = None
 
-    def _precompute_gradients(
+        self._check_valid_order(self.order)
+
+    def _precompute_derivatives(
         self, X_train: np.ndarray, y_train: np.ndarray
     ) -> None:
         """Computes the gradient for the training points and their estimated
@@ -69,79 +83,74 @@ class DNNR(BaseEstimator, RegressorMixin):
             X_train (np.ndarray) with shape (n_samples, n_features)
             y_train (np.ndarray) with shape (n_samples, 1)
         """
-        gradients = []
-        estimated_labels = []
+        self.derivatives_ = []
+
         for v in X_train:
-            indices, _ = self.index.query_knn(v, self.n_approx)
-            # ignore the first index as its the point itself
+            indices, _ = self.nn_index.query_knn(v, self.n_approx + 1)
+            # ignore the first index as its the queried point itself
             indices = indices[1:]
-            neighs = X_train[indices] - v
-            m = LinearRegression(fit_intercept=False).fit(
-                np.concatenate(
-                    [
-                        neighs,
-                        np.array(
-                            [
-                                [1],
-                            ]
-                            * (self.n_approx - 1)
-                        ),
-                    ],
-                    axis=1,
-                ),
-                y_train[indices],
+
+            self.derivatives_.append(
+                self._estimate_derivatives(X_train[indices], y_train[indices])
             )
-            nn_y_hat = m.coef_[: self.vector_length]
-            gradients.append(nn_y_hat)
-            estimated_labels.append(m.coef_[self.vector_length])
-        self.gradients = gradients
-        self.estimated_labels = estimated_labels
 
-    def _get_gradients(self) -> list[np.ndarray]:
-        """Returns the stored gradients for the training datapoints"""
-        if self.gradients:
-            return self.gradients
+    def _get_scaler(self) -> scaling_mod.InputScaling:
+        """Returns the scaler object"""
+        if self.scaling is None:
+            return scaling_mod.NoScaling()
+        elif isinstance(self.scaling, str):
+            if self.scaling == "None":
+                return scaling_mod.NoScaling()
+            elif self.scaling == "learned":
+                return scaling_mod.NumpyInputScaling(**self.scaling_kwargs)
+            else:
+                raise ValueError("Unknown scaling method")
         else:
-            raise ValueError("Gradients not yet computed.")
-
-    def _get_estimated_labels(self) -> list[np.ndarray]:
-        """Returns the stored estimated labels for the training datapoints"""
-        if self.estimated_labels:
-            return self.estimated_labels
-        else:
-            raise ValueError("Estimated labels not yet computed.")
+            return self.scaling(**self.scaling_kwargs)
 
     def fit(self, X_train: np.ndarray, y_train: np.ndarray) -> DNNR:
         # save dataset shapes
         m, n = X_train.shape
         self.n = n
         self.m = m
-        # create solver object
-        self.solver = create_solver(self.solver_name)
-        # create and build the nearest neighbhors index
 
-        self.index = self.index_cls.build(X_train, **self.index_kwargs)
-        fsv = np.ones(n)
-        if self.precompute_gradients:
-            self._precompute_gradients(X_train, y_train)
+        if isinstance(self.solver, str):
+            self.solver_ = create_solver(self.solver)
+        else:
+            self.solver_ = self.solver
+        # create and build the nearest neighbors index
+
+        self.scaling_ = self.scaling
         # save a copy of the training data, should be only used
-        # with precompute_gradients=False
-        self.X_train = X_train * fsv
-        self.y_train = y_train
+        # with precompute_derivatives=False
         self.max_y = np.max(y_train)
         self.min_y = np.min(y_train)
-        self.index.build(self.X_train)
-        self.fsv = fsv
-        if self.weighted:
-            raise NotImplementedError("Method not yet implemented")
+
+        self.scaler_ = self._get_scaler()
+        # scale the training data
+        self.X_train = self.scaler_.fit_transform(X_train, y_train)
+        del X_train
+        self.y_train = y_train
+
+        self.nn_index = self.index_cls.build(self.X_train, **self.index_kwargs)
+
+        if self.precompute_derivatives:
+            self._precompute_derivatives(self.X_train, y_train)
+
         return self
 
-    def _estimate_gradient(
+    def _check_valid_order(self, order: str) -> None:
+        if order not in ["1", "2", "2diag", "3diag"]:
+            raise ValueError(
+                "Unknown order. Must be one of `1`, `2`, `2diag`, `3diag`"
+            )
+
+    def _estimate_derivatives(
         self,
         x: np.ndarray,
         y: np.ndarray,
         n_neighbors: Optional[int] = None,
-        mode: Optional[str] = None,
+        order: Optional[str] = None,
     ) -> np.ndarray:
         def _create_2der_mat(mat: np.ndarray) -> np.ndarray:
             """Creates 2-order matrix."""
@@ -153,68 +162,82 @@ class DNNR(BaseEstimator, RegressorMixin):
                 ).reshape(-1)
             return der_mat
 
-        nn_indices, _ = self.index.query_knn(x, n_neighbors or self.n_approx)
-        deltas = self.X_train[nn_indices] - x
+        nn_indices, _ = self.nn_index.query_knn(x, n_neighbors or self.n_approx)
+        deltas_1st = self.X_train[nn_indices] - x
         ys = self.y_train[nn_indices] - y
-        mode = mode or self.mode
+        order = order or self.order
+        self._check_valid_order(order)
 
-        if "diag" in mode:
-            neighs_2nd = 0.5 * np.power(self.X_train[nn_indices] - x, 2)
-            deltas = np.concatenate([deltas, neighs_2nd], axis=1)
-        elif "2" in mode:
-            neighs_2nd = _create_2der_mat(self.X_train[nn_indices] - x)
-            deltas = np.concatenate([deltas, neighs_2nd], axis=1)
-        elif "3" in mode:
-            neighs_2nd = 0.5 * np.power(self.X_train[nn_indices] - x, 2)
-            neighs_3rd = (1 / 6) * np.power(self.X_train[nn_indices] - x, 3)
-            deltas = np.concatenate([deltas, neighs_2nd, neighs_3rd], axis=1)
+        if self.fit_intercept:
+            deltas_1st = np.concatenate(
+                [deltas_1st, np.ones((deltas_1st.shape[0], 1))], axis=1
+            )
+
+        # take care of higher order terms
+        if "1" == order:
+            deltas = deltas_1st
+        elif "2diag" == order:
+            deltas_2nd = 0.5 * np.power(self.X_train[nn_indices] - x, 2)
+            deltas = np.concatenate([deltas_1st, deltas_2nd], axis=1)
+        elif "2" == order:
+            deltas_2nd = _create_2der_mat(self.X_train[nn_indices] - x)
+            deltas = np.concatenate([deltas_1st, deltas_2nd], axis=1)
+        elif "3diag" == order:
+            deltas_2nd = 0.5 * np.power(self.X_train[nn_indices] - x, 2)
+            deltas_3rd = (1 / 6) * np.power(self.X_train[nn_indices] - x, 3)
+            deltas = np.concatenate(
+                [deltas_1st, deltas_2nd, deltas_3rd], axis=1
+            )
+        else:
+            raise ValueError(f"Unknown order: {order}")
 
         w = np.ones(deltas.shape[0])
         # solve for the gradients nn_y_hat
-        nn_y_hat = self.solver.solve(deltas, ys, w)
-        # return gradient
-        return nn_y_hat[: self.n]
+        gamma = self.solver_.solve(deltas, ys, w)
+        return gamma
 
     def predict(self, X_test: np.ndarray) -> np.ndarray:
         predictions = []
-        for v in X_test * self.fsv:
-            indices, _ = self.index.query_knn(v, self.n_neighbors)
-            neigh_preds = []
+        for v in self.scaler_.transform(X_test):
+            indices, _ = self.nn_index.query_knn(v, self.n_neighbors)
+            predictions_of_neighbors = []
             for i in range(self.n_neighbors):
-                # get the neighbhor's features and label
+                # get the neighbor's neighbors' features and labels
                 nn = self.X_train[indices[i]]
                 nn_y = self.y_train[indices[i]]
-                nn_y_hat = self._estimate_gradient(nn, nn_y)
+                # gamma contains all estimated derivatives
+                if self.derivatives_ is not None:
+                    gamma = self.derivatives_[int(indices[i])]
+                else:
+                    gamma = self._estimate_derivatives(nn, nn_y)
 
-                # perform taylor expansion to predict the point's label
-                delta_pred = v - nn
-                intercept = nn_y if "x" not in self.mode else nn_y_hat[self.n]
+                intercept = nn_y if "x" not in self.order else gamma[self.n]
 
-                prediction = intercept + nn_y_hat[: self.n].dot(delta_pred)
-                offset = 1 if "x" in self.mode else 0
-                if "diag" in self.mode:
-                    nn_y_hat_2nd = nn_y_hat[self.n + offset :]
-                    prediction += nn_y_hat_2nd.dot(
-                        0.5 * (np.power(delta_pred, 2))
-                    )
-                elif "2" in self.mode:
-                    nn_y_hat_2nd = nn_y_hat[self.n + offset :]
+                x_delta = v - nn
+
+                # perform taylor approximation to predict the point's label
+                prediction = intercept + gamma[: self.n].dot(x_delta)
+                offset = 1 if "x" in self.order else 0
+                # take care of higher order terms:
+                if "2diag" in self.order:
+                    nn_y_hat_2nd = gamma[self.n + offset :]
+                    prediction += nn_y_hat_2nd.dot(0.5 * (np.power(x_delta, 2)))
+                elif "2" in self.order:
+                    nn_y_hat_2nd = gamma[self.n + offset :]
                     nn_y_hat_2nd = nn_y_hat_2nd.reshape(self.n, self.n)
-                    prediction += 0.5 * (delta_pred).T.dot(nn_y_hat_2nd).dot(
-                        delta_pred
+                    prediction += 0.5 * (x_delta).T.dot(nn_y_hat_2nd).dot(
+                        x_delta
                     )
-                elif "3" in self.mode:
-                    nn_y_hat_2nd = nn_y_hat[
-                        self.n + offset : 2 * self.n + offset
-                    ]
-                    nn_y_hat_3rd = nn_y_hat[2 * self.n + offset :]
+                elif "3diag" in self.order:
+                    nn_y_hat_2nd = gamma[self.n + offset : 2 * self.n + offset]
+                    nn_y_hat_3rd = gamma[2 * self.n + offset :]
                     prediction = (
                         prediction
-                        + nn_y_hat_2nd.dot(0.5 * (np.power(delta_pred, 2)))
-                        + nn_y_hat_3rd.dot((1 / 6) * (np.power(delta_pred, 3)))
+                        + nn_y_hat_2nd.dot(0.5 * (np.power(x_delta, 2)))
+                        + nn_y_hat_3rd.dot((1 / 6) * (np.power(x_delta, 3)))
                     )
-                neigh_preds.append(prediction)
-            predictions.append(np.mean(neigh_preds))
+                predictions_of_neighbors.append(prediction)
+            predictions.append(np.mean(predictions_of_neighbors))
         if self.clipping:
             return np.clip(predictions, a_min=self.min_y, a_max=self.max_y)
         return np.array(predictions)
@@ -231,26 +254,24 @@ class DNNR(BaseEstimator, RegressorMixin):
         point_class = []
         r2s = []
         for v in X_test:
-            indices, _ = self.index.query_knn(v, self.n_neighbors)
+            indices, _ = self.nn_index.query_knn(v, self.n_neighbors)
             indices = indices[1:]
             for i in range(self.n_neighbors - 1):
                 # get the neighbhor's features and label
                 nn = self.X_train[indices[i]]
                 nn_y = self.y_train[indices[i]]
                 # get the neighbhors of this neighbhor
-                nn_indices, _ = self.index.query_knn(nn, self.n_approx)
-                nn_indices = nn_indices[1:]
-                deltas = self.X_train[nn_indices] - nn
-
-                ys = self.y_train[nn_indices] - nn_y
-                w = np.ones(deltas.shape[0])
-                if self.weighted:
-                    pass
-                # solve for the gradients nn_y_hat
-                nn_y_hat = self.solver.solve(deltas, ys, w)
-                local_ly = nn_y + deltas @ nn_y_hat.T
+                nn_indices, _ = self.nn_index.query_knn(nn, self.n_approx)
+                nn_indices = nn_indices[1:]  # drop the neighbor itself
+                # Δx = X_{nn} - X_{i}
+                x_deltas = self.X_train[nn_indices] - nn
+                y_deltas = self.y_train[nn_indices] - nn_y
+                w = np.ones(x_deltas.shape[0])
+                # solve for the gradient estimate γ: γ @ Δx =  Δy
+                gamma = self.solver_.solve(x_deltas, y_deltas, w)
+                local_pred = nn_y + x_deltas @ gamma.T
                 SS_res = np.mean(
-                    np.power(local_ly - self.y_train[nn_indices], 2)
+                    np.power(local_pred - self.y_train[nn_indices], 2)
                 )
                 SS_tot = np.mean(
                     np.power(
@@ -263,17 +284,13 @@ class DNNR(BaseEstimator, RegressorMixin):
                 r2s.append(R2)
                 # perform taylor expansion to predict the point's label
                 delta_pred = v - nn
-                intercept = nn_y if "x" not in self.mode else nn_y_hat[self.n]
-                prediction = intercept + nn_y_hat[: self.n].dot(delta_pred)
+                intercept = nn_y if "x" not in self.order else gamma[self.n]
+                prediction = intercept + gamma[: self.n].dot(delta_pred)
                 p_class = np.abs(prediction - y_test[index])
-                feat_imp = np.multiply(nn_y_hat[: self.n], delta_pred)
+                feat_imp = np.multiply(gamma[: self.n], delta_pred)
                 feature_importances.append(feat_imp)
                 point_class.append(p_class)
                 distance_importances.append(v - nn)
-                # grads.append(np.linalg.norm(nn_y_hat-opt_grad))
-                # friedman_gradients.append(opt_grad)
-                # opt_grad_pred=intercept+np.array(opt_grad).dot(delta_pred)
-                # opt_grad_errors.append(np.abs(opt_grad_pred-y_test[index]))
             index += 1
         return (
             np.array(feature_importances),

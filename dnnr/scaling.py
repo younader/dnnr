@@ -40,6 +40,10 @@ class InputScaling(metaclass=abc.ABCMeta):
             The scaling vector.
         """
 
+    def fit_transform(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
+        self.fit(X, y)
+        return self.transform(X)
+
     @abc.abstractmethod
     def transform(self, X: np.ndarray) -> np.ndarray:
         """Transforms the input.
@@ -52,7 +56,9 @@ class InputScaling(metaclass=abc.ABCMeta):
         """
 
 
-class Identity(InputScaling):
+class NoScaling(InputScaling):
+    """This class does not scale the input."""
+
     def fit(
         self,
         X_train: np.ndarray,
@@ -208,7 +214,7 @@ class NumpyInputScaling(InputScaling):
         def score():
             assert X_val is not None
             n_approx = min(int(X_train.shape[0] / 2), X_train.shape[1] * 6)
-            model = dnnr.DNNR(n_approx=n_approx)
+            model = dnnr.DNNR(n_approx=n_approx, scaling=None)
             model.fit(scaling * X_train, y_train)
             return sk_metrics.r2_score(y_val, model.predict(scaling * X_val))
 
