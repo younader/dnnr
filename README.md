@@ -29,6 +29,15 @@ make test                                               # or run the tests
 
 # 🎉 Example
 
+```python
+X = [[0], [1], [2], [3]]
+y = [0, 0, 1, 1]
+
+from dnnr import DNNR
+model=DNNR(n_neighbors=1,n_approx=3)
+model.fit(x,y)
+model.predict([[1.5]])
+```
 
 
 
@@ -37,9 +46,14 @@ make test                                               # or run the tests
 
 
 
-* Scaling
-* `n_neighbors`
-* ...
+* `n_neighbors` : number of nearest neighbors to use.
+* `n_approx` : number of neighbors used in approximating the gradient.
+* `mode` : Taylor approximation order.
+* `metric` : distance metric used in the nearest neighbor index.
+* `index` : name of the index to be used for nearest neighbor.
+* `solver` : name of the equation solver used in gradient computation.
+* `scaling` : whether to use DNNR scaling.
+
 
 # 📄 Citation
 
