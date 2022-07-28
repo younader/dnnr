@@ -55,7 +55,7 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
     n_neighbors: int = 3
     n_approx: int = 32
     order: str = "1"
-    fit_intercept = False
+    fit_intercept: bool = False
     solver: Union[str, solver_mod.Solver] = "linear_regression"
     index: Union[str, nn_index.BaseIndex] = "annoy"
     index_kwargs: dict[str, Any] = dataclasses.field(default_factory=dict)
