@@ -193,6 +193,10 @@ class NumpyInputScaling(InputScaling):
             The scaling vector.
         """
 
+        n_features = X_train.shape[1]
+        batch_size = 8 * n_features
+        scaling = np.ones((1, n_features))
+
         if (X_val is None) != (y_val is None):
             raise ValueError("X_val and y_val must be either given or not.")
 
@@ -201,7 +205,12 @@ class NumpyInputScaling(InputScaling):
                 val_size if val_size is not None else int(0.1 * len(X_train))
             )
             if split_size < 10:
-                raise ValueError("Split size too small")
+                warnings.warn(
+                    "Validation split for scaling is small! Scaling is skipped!"
+                    f" Got {split_size} samples."
+                )
+                # do not scale
+                return scaling
             X_train, X_val, y_train, y_val = model_selection.train_test_split(
                 X_train,
                 y_train,
@@ -252,10 +261,6 @@ class NumpyInputScaling(InputScaling):
             raise RuntimeError("Already fitted scaling vector")
 
         self._fitted = True
-
-        n_features = X_train.shape[1]
-        batch_size = 8 * n_features
-        scaling = np.ones((1, n_features))
 
         optimizer = get_optimizer()
 
