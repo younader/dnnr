@@ -12,6 +12,10 @@ repos:
       - id: check-merge-conflict
       - id: check-yaml
         args: [ --unsafe ]
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.5.0
+    hooks:
+      - id: nbstripout
   - repo: https://github.com/pre-commit/mirrors-isort
     rev: v5.10.1
     hooks:
