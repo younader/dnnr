@@ -58,5 +58,6 @@ def test_dnnr_scaling_low_samples() -> None:
     # makes the last 5 dimensions unimportant
     model = dnnr.DNNR(scaling='learned', scaling_kwargs=dict(n_epochs=10))
     model.fit(x, y)
-    diff = np.abs(model.predict(x) - y).mean()
-    assert diff < 1
+    assert np.allclose(
+        model.scaler_.scaling_, np.ones_like(model.scaler_.scaling_)
+    )

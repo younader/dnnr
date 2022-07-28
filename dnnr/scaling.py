@@ -210,6 +210,8 @@ class NumpyInputScaling(InputScaling):
                     f" Got {split_size} samples."
                 )
                 # do not scale
+                self.scaling_ = scaling
+                self._fitted = True
                 return scaling
             X_train, X_val, y_train, y_val = model_selection.train_test_split(
                 X_train,
