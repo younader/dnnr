@@ -251,7 +251,7 @@ def test_scaling_on_california():
     )
 
     vanilla_model = dnnr.DNNR()
-    idenity_scaler = scaling.Identity()
+    idenity_scaler = scaling.NoScaling()
     idenity_scaler.fit(X_train, y_train)
     assert (idenity_scaler.transform(X_train) == X_train).all()
     vanilla_model.fit(idenity_scaler.transform(X_train), y_train)

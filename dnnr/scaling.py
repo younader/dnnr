@@ -40,6 +40,10 @@ class InputScaling(metaclass=abc.ABCMeta):
             The scaling vector.
         """
 
+    def fit_transform(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
+        self.fit(X, y)
+        return self.transform(X)
+
     @abc.abstractmethod
     def transform(self, X: np.ndarray) -> np.ndarray:
         """Transforms the input.
@@ -52,7 +56,9 @@ class InputScaling(metaclass=abc.ABCMeta):
         """
 
 
-class Identity(InputScaling):
+class NoScaling(InputScaling):
+    """This class does not scale the input."""
+
     def fit(
         self,
         X_train: np.ndarray,
@@ -130,7 +136,6 @@ class NumpyInputScaling(InputScaling):
         optimizer_params: The parameters of the optimizer.
         epsilon: The epsilon for gradient computation.
         random: The `random.Random` instance for this class.
-        n_trees: Number of trees in the Annoy index
         show_progress: Whether to show a progress bar.
         fail_on_nan: Whether to fail on NaN values.
     """
@@ -145,7 +150,6 @@ class NumpyInputScaling(InputScaling):
             random_mod.randint(0, 2**32 - 1)
         )
     )
-    n_trees: int = 25  # Number of trees in the Annoy index
     show_progress: bool = False
     fail_on_nan: bool = False
     index: Union[str, type[nn_index.BaseIndex]] = 'annoy'
@@ -210,7 +214,7 @@ class NumpyInputScaling(InputScaling):
         def score():
             assert X_val is not None
             n_approx = min(int(X_train.shape[0] / 2), X_train.shape[1] * 6)
-            model = dnnr.DNNR(n_approx=n_approx)
+            model = dnnr.DNNR(n_approx=n_approx, scaling=None)
             model.fit(scaling * X_train, y_train)
             return sk_metrics.r2_score(y_val, model.predict(scaling * X_val))
 

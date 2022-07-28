@@ -78,9 +78,9 @@ class NPSolver(Solver):
 
 
 def create_solver(solver: str) -> Solver:
-    if solver == "lr":
+    if solver == "linear_regression":
         return SKLinearRegression()
-    elif solver == "scipy":
+    elif solver == "scipy_lsqr":
         return ScipyLsqr()
     elif solver == "numpy":
         return NPSolver()
