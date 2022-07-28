@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 
 import dnnr
@@ -35,7 +37,13 @@ def test_dnnr_scaling() -> None:
     w[5:] = 0
     y = x @ w + (0.2 * x @ w) ** 2
     y = y[:, 0]
-    model = dnnr.DNNR(scaling='learned', scaling_kwargs=dict(n_epochs=10))
+    model = dnnr.DNNR(
+        scaling='learned',
+        scaling_kwargs=dict(
+            n_epochs=10,
+            random=random.Random(1),
+        ),
+    )
     model.fit(x, y)
     diff = np.abs(model.predict(x) - y).mean()
     assert diff < 1
