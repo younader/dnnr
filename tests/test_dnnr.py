@@ -48,3 +48,16 @@ def test_dnnr_scaling() -> None:
     assert (model.scaler_.scaling_[0, 5:] < 0.5).all()
     # imported dimension are scaled higher
     assert (model.scaler_.scaling_[0, :5] > 0.5).all()
+
+
+def test_dnnr_scaling_low_samples() -> None:
+    np.random.seed(0)
+    x = np.random.normal(size=(20, 10))
+    w = 0.2 * np.random.normal(size=(10, 1)) + 2.0
+    y = x @ w + (0.2 * x @ w) ** 2
+    # makes the last 5 dimensions unimportant
+    model = dnnr.DNNR(scaling='learned', scaling_kwargs=dict(n_epochs=10))
+    model.fit(x, y)
+    assert np.allclose(
+        model.scaler_.scaling_, np.ones_like(model.scaler_.scaling_)
+    )

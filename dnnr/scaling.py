@@ -9,6 +9,7 @@ from typing import Any, Optional, Union
 import numpy as np
 import scipy.optimize
 import scipy.spatial.distance
+import sklearn.base
 
 # from sklearn.metrics import mean_absolute_error, mean_squared_error
 import sklearn.metrics as sk_metrics
@@ -19,7 +20,7 @@ import dnnr
 from dnnr import nn_index
 
 
-class InputScaling(metaclass=abc.ABCMeta):
+class InputScaling(sklearn.base.BaseEstimator, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def fit(
         self,
@@ -192,6 +193,10 @@ class NumpyInputScaling(InputScaling):
             The scaling vector.
         """
 
+        n_features = X_train.shape[1]
+        batch_size = 8 * n_features
+        scaling = np.ones((1, n_features))
+
         if (X_val is None) != (y_val is None):
             raise ValueError("X_val and y_val must be either given or not.")
 
@@ -200,7 +205,14 @@ class NumpyInputScaling(InputScaling):
                 val_size if val_size is not None else int(0.1 * len(X_train))
             )
             if split_size < 10:
-                raise ValueError("Split size too small")
+                warnings.warn(
+                    "Validation split for scaling is small! Scaling is skipped!"
+                    f" Got {split_size} samples."
+                )
+                # do not scale
+                self.scaling_ = scaling
+                self._fitted = True
+                return scaling
             X_train, X_val, y_train, y_val = model_selection.train_test_split(
                 X_train,
                 y_train,
@@ -252,16 +264,13 @@ class NumpyInputScaling(InputScaling):
 
         self._fitted = True
 
-        n_features = X_train.shape[1]
-        batch_size = 8 * n_features
-        scaling = np.ones((1, n_features))
-
         optimizer = get_optimizer()
 
         self.scaling_history.append(scaling.copy())
         self.scores_history.append(score())
         for epoch in tqdm.trange(self.n_epochs, disable=not self.show_progress):
-            index = self.index_cls.build(scaling * X_train, **self.index_kwargs)
+            index = self.index_cls(**self.index_kwargs)
+            index.fit(scaling * X_train)
 
             train_index = list(range(len(X_train)))
             if self.shuffle:
