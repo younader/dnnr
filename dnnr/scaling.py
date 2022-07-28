@@ -9,6 +9,7 @@ from typing import Any, Optional, Union
 import numpy as np
 import scipy.optimize
 import scipy.spatial.distance
+import sklearn.base
 
 # from sklearn.metrics import mean_absolute_error, mean_squared_error
 import sklearn.metrics as sk_metrics
@@ -19,7 +20,7 @@ import dnnr
 from dnnr import nn_index
 
 
-class InputScaling(metaclass=abc.ABCMeta):
+class InputScaling(sklearn.base.BaseEstimator, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def fit(
         self,
@@ -261,7 +262,8 @@ class NumpyInputScaling(InputScaling):
         self.scaling_history.append(scaling.copy())
         self.scores_history.append(score())
         for epoch in tqdm.trange(self.n_epochs, disable=not self.show_progress):
-            index = self.index_cls.build(scaling * X_train, **self.index_kwargs)
+            index = self.index_cls(**self.index_kwargs)
+            index.fit(scaling * X_train)
 
             train_index = list(range(len(X_train)))
             if self.shuffle:

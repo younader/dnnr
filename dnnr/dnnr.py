@@ -57,21 +57,27 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
     order: str = "1"
     fit_intercept = False
     solver: Union[str, solver_mod.Solver] = "linear_regression"
-    index: Union[str, type[nn_index.BaseIndex]] = "annoy"
+    index: Union[str, nn_index.BaseIndex] = "annoy"
     index_kwargs: dict[str, Any] = dataclasses.field(default_factory=dict)
-    scaling: Union[None, str, type[scaling_mod.InputScaling]] = "learned"
+    scaling: Union[None, str, scaling_mod.InputScaling] = "learned"
     scaling_kwargs: dict[str, Any] = dataclasses.field(default_factory=dict)
     precompute_derivatives: bool = False
     clipping: bool = False
 
     def __post_init__(self):
+        self.nn_index: nn_index.BaseIndex
+
         if isinstance(self.index, str):
-            self.index_cls = nn_index.get_index_class(self.index)
+            index_cls = nn_index.get_index_class(self.index)
+            self.nn_index = index_cls(**self.index_kwargs)
         else:
-            self.index_cls = self.index
+            self.nn_index = self.index
+
         self.derivatives_: Optional[list[np.ndarray]] = None
 
         self._check_valid_order(self.order)
+
+        self.fitted_ = False
 
     def _precompute_derivatives(
         self, X_train: np.ndarray, y_train: np.ndarray
@@ -106,9 +112,10 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
             else:
                 raise ValueError("Unknown scaling method")
         else:
-            return self.scaling(**self.scaling_kwargs)
+            return self.scaling
 
     def fit(self, X_train: np.ndarray, y_train: np.ndarray) -> DNNR:
+
         # save dataset shapes
         m, n = X_train.shape
         self.n = n
@@ -132,11 +139,12 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
         del X_train
         self.y_train = y_train
 
-        self.nn_index = self.index_cls.build(self.X_train, **self.index_kwargs)
+        self.nn_index.fit(self.X_train, **self.index_kwargs)
 
         if self.precompute_derivatives:
             self._precompute_derivatives(self.X_train, y_train)
 
+        self.fitted_ = True
         return self
 
     def _check_valid_order(self, order: str) -> None:
@@ -197,6 +205,9 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
         return gamma
 
     def predict(self, X_test: np.ndarray) -> np.ndarray:
+        if not self.fitted_:
+            raise RuntimeError("DNNR is not fitted! Call `.fit()` first.")
+
         predictions = []
         for v in self.scaler_.transform(X_test):
             indices, _ = self.nn_index.query_knn(v, self.n_neighbors)
@@ -298,7 +309,11 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
             np.array(distance_importances),
             np.array(r2s),
         )
+
     def __repr__(self) -> str:
-        return "DNNR(n_neighbors={n_neighbors},n_approx={n_approx})".format(n_neighbors=self.n_neighbors,n_approx=self.n_approx)
+        return "DNNR(n_neighbors={n_neighbors},n_approx={n_approx})".format(
+            n_neighbors=self.n_neighbors, n_approx=self.n_approx
+        )
+
     def __str__(self) -> str:
         return "instance of DNNR"

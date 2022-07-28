@@ -1,18 +1,19 @@
 from __future__ import annotations
 
 import abc
-from typing import Any, TypeVar, Union, cast
+import dataclasses
+from typing import Any, TypeVar, Union
 
 import numpy as np
-from sklearn.neighbors import KDTree
+import sklearn.base
+import sklearn.neighbors
 
 T = TypeVar('T')
 
 
-class BaseIndex(metaclass=abc.ABCMeta):
-    @classmethod
+class BaseIndex(sklearn.base.BaseEstimator, metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def build(cls: type[T], x: np.ndarray, **kwargs: dict[str, Any]) -> T:
+    def fit(self, x: np.ndarray) -> None:
         """Builds the index.
 
         Args:
@@ -36,41 +37,42 @@ class BaseIndex(metaclass=abc.ABCMeta):
         pass
 
 
+@dataclasses.dataclass
 class KDTreeIndex(BaseIndex):
-    @classmethod
-    def build(cls, x: np.ndarray, **kwargs: dict[str, Any]) -> KDTreeIndex:
-        return cls(x, **kwargs)
+    metric: str = "euclidean"
+    leaf_size: int = 40
+    kwargs: dict[str, Any] = dataclasses.field(default_factory=dict)
 
-    def __init__(self, x: np.ndarray, **kwargs: dict[str, Any]) -> None:
-        self.index = KDTree(x, **kwargs)
+    def fit(self, x: np.ndarray) -> None:
+        self.index = sklearn.neighbors.KDTree(
+            x, metric=self.metric, leaf_size=self.leaf_size, **self.kwargs
+        )
 
     def query_knn(self, v: np.ndarray, k: int) -> tuple[np.ndarray, np.ndarray]:
+        if not hasattr(self, "index"):
+            raise ValueError("Index not fitted.")
         distances, indices = self.index.query([v], k=k)
         return indices[0], distances[0][0]
 
 
+@dataclasses.dataclass
 class AnnoyIndex(BaseIndex):
-    def __init__(self, vector_length: int, metric: str = "euclidean") -> None:
+    metric: str = "euclidean"
+    n_trees: int = 50
+
+    def fit(self, x: np.ndarray) -> None:
         import annoy
 
-        super().__init__()
-
-        self.vector_length = vector_length
-        self.metric = metric
-        self.index = annoy.AnnoyIndex(self.vector_length, self.metric)
-
-    @classmethod
-    def build(cls, x: np.ndarray, **kwargs: dict[str, Any]) -> AnnoyIndex:
-        n_trees = kwargs.get('n_trees', 50)
-        metric = cast(str, kwargs.get('metric', 'euclidean'))
-        index = AnnoyIndex(x.shape[1], metric=metric)
+        self.index = annoy.AnnoyIndex(x.shape[1], self.metric)
 
         for i, v in zip(range(len(x)), x):
-            index.index.add_item(i, v)
-        index.index.build(n_trees)
-        return index
+            self.index.add_item(i, v)
+        self.index.build(self.n_trees)
 
     def query_knn(self, v: np.ndarray, k: int) -> tuple[np.ndarray, np.ndarray]:
+        if not hasattr(self, "index"):
+            raise ValueError("Index not fitted.")
+
         indices, distances = self.index.get_nns_by_vector(
             v, k, include_distances=True
         )
