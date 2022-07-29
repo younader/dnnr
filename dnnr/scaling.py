@@ -128,7 +128,7 @@ class RMSPROP:
 
 
 @dataclasses.dataclass
-class NumpyInputScaling(InputScaling):
+class LearnedScaling(InputScaling):
     """This class handles the scaling of the input.
 
     Args:
@@ -225,8 +225,8 @@ class NumpyInputScaling(InputScaling):
 
         def score():
             assert X_val is not None
-            n_approx = min(int(X_train.shape[0] / 2), X_train.shape[1] * 6)
-            model = dnnr.DNNR(n_approx=n_approx, scaling=None)
+            n_derivative_neighbors = min(int(X_train.shape[0] / 2), X_train.shape[1] * 6)
+            model = dnnr.DNNR(n_derivative_neighbors=n_derivative_neighbors, scaling=None)
             model.fit(scaling * X_train, y_train)
             return sk_metrics.r2_score(y_val, model.predict(scaling * X_val))
 

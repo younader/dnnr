@@ -37,8 +37,8 @@ def get_torch_grad_scaler_cls():
         epochs: int = 1
 
         def score(self, X_train, y_train, X_test, y_test):
-            n_approx = min(int(X_train.shape[0] / 2), X_train.shape[1] * 6)
-            model = DNNR(n_approx=n_approx)
+            n_derivative_neighbors = min(int(X_train.shape[0] / 2), X_train.shape[1] * 6)
+            model = DNNR(n_derivative_neighbors=n_derivative_neighbors)
             model.fit(X_train, y_train)
             return sk_metrics.ean_absolute_error(y_test, model.predict(X_test))
 
@@ -185,7 +185,7 @@ def test_numpy_grad_scaler():
     fsv = torch.ones(1, channels, requires_grad=True)
     cost = scaler.train_step(fsv, nn_x, nn_y, v, y)
 
-    np_scaler = scaling.NumpyInputScaling()
+    np_scaler = scaling.LearnedScaling()
     np_cost, fsv_grad = np_scaler._get_gradient(
         fsv.detach().numpy(), nn_x.numpy(), nn_y.numpy(), v.numpy(), y.numpy()
     )
@@ -209,8 +209,8 @@ def test_cossim_backward():
 
     a_np = a.detach().numpy()
     b_np = b.detach().numpy()
-    cossim_np = scaling.NumpyInputScaling._cossim(a_np, b_np)
-    a_grad, b_grad = scaling.NumpyInputScaling._cossim_backward(
+    cossim_np = scaling.LearnedScaling._cossim(a_np, b_np)
+    a_grad, b_grad = scaling.LearnedScaling._cossim_backward(
         np.ones(1),
         cossim_np,
         a_np,
@@ -263,7 +263,7 @@ def test_scaling_on_california():
         ('rmsprop', dict(lr=1e-3)),
     ]
     for opt, opt_kwargs in optimizers:
-        scaler = scaling.NumpyInputScaling(
+        scaler = scaling.LearnedScaling(
             n_epochs=2,
             fail_on_nan=True,
             show_progress=True,
@@ -292,7 +292,7 @@ def test_scaling_on_california():
 
 def test_scaling_nans():
     def get_nans(
-        # self: scaling.NumpyInputScaling,
+        # self: scaling.LearnedScaling,
         fsv: np.ndarray,
         nn_x: np.ndarray,
         nn_y: np.ndarray,
@@ -301,7 +301,7 @@ def test_scaling_nans():
     ) -> Tuple[np.ndarray, np.ndarray]:
         return np.nan * fsv.sum(), np.nan * fsv
 
-    scaler_should_fail = scaling.NumpyInputScaling(
+    scaler_should_fail = scaling.LearnedScaling(
         n_epochs=1,
         fail_on_nan=True,
         show_progress=True,
@@ -318,7 +318,7 @@ def test_scaling_nans():
     with pytest.raises(RuntimeError):
         scaler_should_fail.fit(data, target)
 
-    scaler_should_warn = scaling.NumpyInputScaling(
+    scaler_should_warn = scaling.LearnedScaling(
         n_epochs=1,
         fail_on_nan=False,
         show_progress=True,

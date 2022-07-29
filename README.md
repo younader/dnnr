@@ -28,7 +28,7 @@ from dnnr import DNNR
 X = [[0], [1], [2], [3]]
 y = [0, 0, 1, 1]
 
-model = DNNR(n_neighbors=1, n_approx=3)
+model = DNNR(n_neighbors=1, n_derivative_neighbors=3)
 model.fit(x,y)
 model.predict([[1.5]])
 ```
@@ -38,7 +38,7 @@ model.predict([[1.5]])
 
 
 * `n_neighbors` : number of nearest neighbors to use.
-* `n_approx` : number of neighbors used in approximating the gradient.
+* `n_derivative_neighbors` : number of neighbors used in approximating the gradient.
 * `mode` : Taylor approximation order.
 * `metric` : distance metric used in the nearest neighbor index.
 * `index` : name of the index to be used for nearest neighbor.

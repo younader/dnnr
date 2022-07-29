@@ -48,7 +48,7 @@ def test_dnnr_scaling() -> None:
     diff = np.abs(model.predict(x) - y).mean()
     assert diff < 1
 
-    assert isinstance(model.scaler_, dnnr.NumpyInputScaling)
+    assert isinstance(model.scaler_, dnnr.LearnedScaling)
     assert model.scaler_.scaling_ is not None
     assert model.scaler_._fitted
 
@@ -81,7 +81,7 @@ def test_dnnr_higher_orders() -> None:
     y = y[:, 0]
 
     for order in ['2diag', '3diag', '2']:
-        model = dnnr.DNNR(order=order, n_neighbors=4, n_approx=50, clip=True)
+        model = dnnr.DNNR(order=order, n_neighbors=4, n_derivative_neighbors=50, clip=True)
         model.fit(x, y)
         diff = np.abs(model.predict(x[:20]) - y[:20]).mean()
         if order != "2":
