@@ -4,11 +4,14 @@
 
 Implementation of ["DNNR: Differential Nearest Neighbors Regression"](https://proceedings.mlr.press/v162/nader22a.html).
 
+**DNNR pushes KNN regression to a gradient boosting performance!**
+
 Whereas KNN regression only uses the averaged value, DNNR also uses the gradient or even higher-order derivatives:
 
 ![KNN and DNNR Overview Image](knn_dnnr_overview.png)
 
 Our implementation uses `numpy`, `sklearn`, and the [`annoy`](https://github.com/spotify/annoy) approximate nearest neighbor index. Using `annoy` is optional, as you can also use `sklearn`'s KDTree as index. We support Python 3.7 to 3.10.
+
 
 # 🚀 Quickstart
 
@@ -18,6 +21,7 @@ To install this project, run:
 ```bash
 pip install dnnr
 ```
+
 
 # 🎉 Example
 
@@ -35,6 +39,7 @@ model.predict([[1.5]])
 ```
 
 Also check out our [Jupiter Notebook](./examples/dnnr_tutorial.ipynb) on how to use DNNR. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/younader/dnnr/blob/main/examples/dnnr_tutorial.ipynb)
+
 
 # 📊 Hyperparameters
 
@@ -54,6 +59,7 @@ We recommend a hyperparameter search over the `n_derivative_neighbors` variable 
 
 For all options, see the documentation of the [DNNR class](https://younader.github.io/dnnr/site/api/#dnnr.dnnr.DNNR).
 
+
 #  🛠 Development Installation
 
 ```bash
@@ -65,6 +71,7 @@ pip install -U pip wheel poetry
 poetry install
 make test                 # to run the tests
 ```
+
 
 # 📄 Citation
 
