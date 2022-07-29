@@ -14,11 +14,10 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   publish_dev_build:
-    runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        python-versions: ['3.9', '3.10']
+        python-versions: ['3.9']
+        os: ['ubuntu-latest']
 
     steps:
       - uses: actions/checkout@v2
