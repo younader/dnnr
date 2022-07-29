@@ -34,7 +34,7 @@ y = np.array([0, 0, 1, 1])
 
 model = DNNR(n_neighbors=1, n_derivative_neighbors=3)
 model.fit(X, y)
-model.predict([[1.5]])    
+model.predict([[1.5]])
 # Will output: 0.25
 ```
 
@@ -57,7 +57,7 @@ DNNR has three main hyperparameters:
 
 We recommend a hyperparameter search over the `n_derivative_neighbors` variable to archive the best performance.
 
-For all options, see the documentation of the [DNNR class](https://younader.github.io/dnnr/site/api/#dnnr.dnnr.DNNR).
+For all options, see the documentation of the [DNNR class](https://younader.github.io/dnnr/api/#dnnr.dnnr.DNNR).
 
 #  🛠 Development Installation
 
