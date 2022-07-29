@@ -4,7 +4,7 @@ import abc
 import dataclasses
 import random as random_mod
 import warnings
-from typing import Any, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import scipy.optimize
@@ -75,7 +75,7 @@ class NoScaling(InputScaling):
 
 class _Optimizer(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def step(self, gradients: list[np.ndarray]) -> None:
+    def step(self, gradients: List[np.ndarray]) -> None:
         """Updates the parameters.
 
         Args:
@@ -92,10 +92,10 @@ class SGD(_Optimizer):
         lr: The learning rate.
     """
 
-    parameters: list[np.ndarray]
+    parameters: List[np.ndarray]
     lr: float = 0.01
 
-    def step(self, gradients: list[np.ndarray]) -> None:
+    def step(self, gradients: List[np.ndarray]) -> None:
         for param, grad in zip(self.parameters, gradients):
             param -= self.lr * grad
 
@@ -111,7 +111,7 @@ class RMSPROP:
         eps: The epsilon to avoid division by zero.
     """
 
-    parameters: list[np.ndarray]
+    parameters: List[np.ndarray]
     lr: float = 1e-4
     γ: float = 0.99
     eps: float = 1e-08
@@ -119,7 +119,7 @@ class RMSPROP:
     def __post_init__(self):
         self.v = [np.zeros_like(param) for param in self.parameters]
 
-    def step(self, gradients: list[np.ndarray]) -> None:
+    def step(self, gradients: List[np.ndarray]) -> None:
         for param, grad, v in zip(self.parameters, gradients, self.v):
             # inplace update
             v[:] = self.γ * v + (1 - self.γ) * grad**2
@@ -142,8 +142,8 @@ class NumpyInputScaling(InputScaling):
     """
 
     n_epochs: int = 1
-    optimizer: Union[str, type[_Optimizer]] = SGD
-    optimizer_params: dict[str, Any] = dataclasses.field(default_factory=dict)
+    optimizer: Union[str, Type[_Optimizer]] = SGD
+    optimizer_params: Dict[str, Any] = dataclasses.field(default_factory=dict)
     shuffle: bool = True
     epsilon: float = 1e-6
     random: random_mod.Random = dataclasses.field(
@@ -153,8 +153,8 @@ class NumpyInputScaling(InputScaling):
     )
     show_progress: bool = False
     fail_on_nan: bool = False
-    index: Union[str, type[nn_index.BaseIndex]] = 'annoy'
-    index_kwargs: dict[str, Any] = dataclasses.field(default_factory=dict)
+    index: Union[str, Type[nn_index.BaseIndex]] = 'annoy'
+    index_kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
     def __post_init__(self):
         self.scaling_: Optional[np.ndarray] = None
@@ -307,7 +307,7 @@ class NumpyInputScaling(InputScaling):
         nn_y: np.ndarray,
         v: np.ndarray,
         y: np.ndarray,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Returns the loss and the gradient.
 
         Args:
@@ -401,7 +401,7 @@ class NumpyInputScaling(InputScaling):
         a: np.ndarray,
         b: np.ndarray,
         eps: float = 1e-8,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Backward pass for the cosine similarity.
 
         Args:

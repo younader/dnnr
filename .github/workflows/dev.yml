@@ -20,9 +20,14 @@ jobs:
     # The type of runner that the job will run on
     strategy:
       matrix:
-        python-versions: ['3.9', '3.10']
-        # os: ['ubuntu-latest' , 'windows-latest', 'macos-latest']
-        os: ['ubuntu-latest']
+        python-versions: ['3.7', '3.8', '3.9', '3.10']
+        os: ['ubuntu-latest'] #, 'windows-latest', 'macos-latest']
+        include:
+          - os: 'macos-latest'
+            python-versions: '3.9'
+          # - os: 'windows-latest'
+          #   python-versions: '3.9'
+
     runs-on: ${{ matrix.os }}
     env:
       PYTHONIOENCODING: "utf8"
@@ -40,8 +45,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry tox tox-gh-actions
 
-      - name: test with tox
-        run:
+      - name: Show tox version
+        run: |
+          python -c 'import sys; print(sys.getdefaultencoding())'
+          tox --version
+      - name: Test with tox
+        run: |
           tox
         env:
           PLATFORM: ${{ matrix.os }}

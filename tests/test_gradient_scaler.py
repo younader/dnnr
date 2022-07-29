@@ -1,5 +1,6 @@
 import random
 from dataclasses import dataclass
+from typing import Tuple
 
 import annoy
 import numpy as np
@@ -299,7 +300,7 @@ def test_scaling_nans():
         nn_y: np.ndarray,
         v: np.ndarray,
         y: np.ndarray,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         return np.nan * fsv.sum(), np.nan * fsv
 
     scaler_should_fail = scaling.NumpyInputScaling(
