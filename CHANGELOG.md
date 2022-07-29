@@ -1,5 +1,6 @@
 # Changelog
 
-## 0.1.0 (2022-05-17)
+## 0.1.0 (2022-07-29)
 
-* First release on PyPI.
+* First release!
+* Includes the numpy implementation of DNNR.
