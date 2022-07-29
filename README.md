@@ -9,6 +9,8 @@ Whereas KNN regression only uses the averaged value, DNNR also uses the gradient
 
 ![KNN and DNNR Overview Image](knn_dnnr_overview.png)
 
+Our implementation is written using `numpy`, `sklearn` and the [`annoy`](https://github.com/spotify/annoy) approximate nearest neighbor index. Using `annoy` is optional, as you can also use `sklearn`'s KDTree as index.
+
 # 🚀 Quickstart
 
 
@@ -17,8 +19,6 @@ To install this project, run:
 ```bash
 pip install dnnr
 ```
-
-
 
 # 🎉 Example
 
@@ -51,7 +51,7 @@ DNNR has three main hyperparameters:
 
 To archive best performance, we would recommend a hyperparameter search over the `n_derivative_neighbors` variable.
 
-For all options, see the documentation at
+For all options, see the documentation of the [DNNR class](https://younader.github.io/dnnr/site/api/#dnnr.dnnr.DNNR).
 
 #  🛠 Development Installation
 
