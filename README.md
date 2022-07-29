@@ -33,9 +33,11 @@ model.fit(x,y)
 model.predict([[1.5]])
 ```
 
+Also checkout our [Jupiter Notebook](./examples/dnnr_tutorial.ipynb) on how to use DNNR. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/younader/dnnr/blob/main/examples/dnnr_tutorial.ipynb)
+
 # 📊 Hyperparameters
 
-
+Th
 
 * `n_neighbors` : number of nearest neighbors to use.
 * `n_derivative_neighbors` : number of neighbors used in approximating the gradient.
