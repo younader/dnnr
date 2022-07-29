@@ -22,14 +22,16 @@ pip install dnnr
 # 🎉 Example
 
 ```python
+import numpy as np
 from dnnr import DNNR
 
-X = [[0], [1], [2], [3]]
-y = [0, 0, 1, 1]
+X = np.array([[0], [1], [2], [3]])
+y = np.array([0, 0, 1, 1])
 
 model = DNNR(n_neighbors=1, n_derivative_neighbors=3)
-model.fit(x,y)
-model.predict([[1.5]])
+model.fit(X, y)
+model.predict([[1.5]])    
+# Will output: 0.25
 ```
 
 Also check out our [Jupiter Notebook](./examples/dnnr_tutorial.ipynb) on how to use DNNR. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/younader/dnnr/blob/main/examples/dnnr_tutorial.ipynb)
