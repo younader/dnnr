@@ -29,7 +29,7 @@ class NeighborPrediction:
 class DNNRPrediction:
     query: np.ndarray
     y_pred: np.ndarray
-    neighbors: list[NeighborPrediction]
+    neighbor_predictions: list[NeighborPrediction]
     y_true: Optional[np.ndarray] = None
 
 
@@ -335,7 +335,7 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
                     query=v,
                     y_pred=np.mean([n.local_prediction for n in neighbors]),
                     y_true=y_test[index] if y_test is not None else None,
-                    neighbors=neighbors,
+                    neighbor_predictions=neighbors,
                 )
             )
             index += 1
