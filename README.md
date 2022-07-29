@@ -37,15 +37,21 @@ Also checkout our [Jupiter Notebook](./examples/dnnr_tutorial.ipynb) on how to u
 
 # 📊 Hyperparameters
 
-Th
+DNNR has three main hyperparameters:
 
-* `n_neighbors` : number of nearest neighbors to use.
-* `n_derivative_neighbors` : number of neighbors used in approximating the gradient.
-* `mode` : Taylor approximation order.
-* `metric` : distance metric used in the nearest neighbor index.
-* `index` : name of the index to be used for nearest neighbor.
-* `solver` : name of the equation solver used in gradient computation.
-* `scaling` : whether to use DNNR scaling.
+* `n_neighbors`: number of nearest neighbors to use. The default value of
+      `3` is usually a good choice.
+* `n_derivative_neighbors`: number of neighbors used in approximating the
+      derivatives. As a default value, we choose `3 * dim` where `dim` is
+      the dimension of the input data.
+* `order`: Taylor approximation order, one of `1`, `2`, `2diag`, `3diag`.
+      The preferable option here is `1`. Sometimes `2diag` can deliver
+      small improvements. `2` and `3diag` are implemented but usually do
+      not yield significant improvements.
+
+To archive best performance, we would recommend a hyperparameter search over the `n_derivative_neighbors` variable.
+
+For all options, see the documentation at
 
 #  🛠 Development Installation
 
