@@ -59,7 +59,6 @@ We recommend a hyperparameter search over the `n_derivative_neighbors` variable 
 
 For all options, see the documentation of the [DNNR class](https://younader.github.io/dnnr/site/api/#dnnr.dnnr.DNNR).
 
-
 #  🛠 Development Installation
 
 ```bash
