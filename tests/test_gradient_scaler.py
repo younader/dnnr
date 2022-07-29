@@ -37,7 +37,9 @@ def get_torch_grad_scaler_cls():
         epochs: int = 1
 
         def score(self, X_train, y_train, X_test, y_test):
-            n_derivative_neighbors = min(int(X_train.shape[0] / 2), X_train.shape[1] * 6)
+            n_derivative_neighbors = min(
+                int(X_train.shape[0] / 2), X_train.shape[1] * 6
+            )
             model = DNNR(n_derivative_neighbors=n_derivative_neighbors)
             model.fit(X_train, y_train)
             return sk_metrics.ean_absolute_error(y_test, model.predict(X_test))
