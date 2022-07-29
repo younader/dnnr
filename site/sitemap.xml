@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://younader.github.io/dnnr/</loc>
+         <lastmod>2022-07-29</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://younader.github.io/dnnr/api/</loc>
+         <lastmod>2022-07-29</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://younader.github.io/dnnr/changelog/</loc>
+         <lastmod>2022-07-29</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://younader.github.io/dnnr/contributing/</loc>
+         <lastmod>2022-07-29</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://younader.github.io/dnnr/installation/</loc>
+         <lastmod>2022-07-29</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://younader.github.io/dnnr/usage/</loc>
+         <lastmod>2022-07-29</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+</urlset>
