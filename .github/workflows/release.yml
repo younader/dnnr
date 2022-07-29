@@ -17,11 +17,11 @@ jobs:
   # This workflow contains a single job called "release"
   release:
     name: Create Release
-    runs-on: ubuntu-20.04
+    runs-on: 'ubuntu-latest'
 
     strategy:
       matrix:
-        python-versions: ['3.9', '3.10']
+        python-versions: ['3.9']
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:

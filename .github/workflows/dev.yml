@@ -21,16 +21,8 @@ jobs:
     strategy:
       matrix:
         python-versions: ['3.7', '3.8', '3.9', '3.10']
-        os: ['ubuntu-latest'] #, 'windows-latest', 'macos-latest']
-        include:
-          - os: 'macos-latest'
-            python-versions: '3.9'
-          # - os: 'windows-latest'
-          #   python-versions: '3.9'
 
-    runs-on: ${{ matrix.os }}
-    env:
-      PYTHONIOENCODING: "utf8"
+    runs-on: 'ubuntu-latest'
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
