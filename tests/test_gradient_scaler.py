@@ -253,9 +253,9 @@ def test_scaling_on_california():
         data, target, test_size=0.15, random_state=0
     )
 
-    vanilla_model = dnnr.DNNR()
     idenity_scaler = scaling.NoScaling()
     idenity_scaler.fit(X_train, y_train)
+    vanilla_model = dnnr.DNNR(scaling=idenity_scaler)
     assert (idenity_scaler.transform(X_train) == X_train).all()
     vanilla_model.fit(idenity_scaler.transform(X_train), y_train)
     vanilla_r2 = vanilla_model.score(X_test, y_test)
