@@ -43,38 +43,49 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
 
     The order of approximation can be controlled with the `order` argument:
 
-    - `1`: Uses first-order approximation (the gradient)
-    - `2`: The first-order and full second-order matrix (gradient & Hessian)
-    - `2diag`: First-order and diagonal of the second-order derivatives
-    - `3diag`: First-order and diagonals of the second and third-orders
+        - `1`: Uses first-order approximation (the gradient)
+        - `2diag`: First-order and diagonal of the second-order derivatives
+        - `2`: The first-order and full second-order matrix (gradient & Hessian)
+        - `3diag`: First-order and diagonals of the second and third-orders
 
+    The recommendation is to use `1` which is the most efficient one, using
+    `2diag` can sometimes improve the performance. `2` and `3diag` are more
+    expensive and usually also do not deliver a better performance.
 
     Args:
-        n_neighbors: number of nearest neighbors to use.
-        n_derivative_neighbors: number of neighbors used in approximating the derivatives.
+        n_neighbors: number of nearest neighbors to use. The default value of
+            `3` is usually a good choice.
+        n_derivative_neighbors: number of neighbors used in approximating the
+            derivatives. As a default value, we choose `3 * dim` where `dim` is
+            the dimension of the input data. This is usually a good heuristic,
+            but we would recommend to use a hyperparameter search to find the
+            best value for it.
         order: Taylor approximation order, one of `1`, `2`, `2diag`, `3diag`.
+            The preferable option here is `1` and sometimes `2diag` can deliver
+            small improvements. `2` and `3diag` are implemented but usually do
+            not yield significant improvements.
         fit_intercept: if True, the intercept is estimated. Otherwise, the
             point's ground truth label is used.
         solver: name of the equation solver used to approximate the derivatives.
+            As default `linear_regression` is used. Other options are
+            `scipy_lsqr`, `numpy`, `ridge` and `lasso`. Also accepts any class
+            inheriting from `dnnr.solver.Solver`.
         index: name of the index to be used for nearest neighbor (`annoy` or
-            `kd_tree`).
-        index_kwargs: keyword arguments to be passed to the index constructor.
-        scaling: name of the scaling method to be used.
+            `kd_tree`). Also accepts any subclass of `dnnr.nn_index.BaseIndex`.
+        index_kwargs: keyword arguments passed to the index constructor.
+        scaling: name of the scaling method to be used. If it is `None` or
+            `no_scaling`, the data is not scaled. If it is `learned`, the
+            scaling is learned using the cosine similarity objective.
         scaling_kwargs: keyword arguments to be passed to the scaling method.
         precompute_derivatives: if True, the gradient is computed for each
             training point during the `fit`. Otherwise, the gradient is computed
             during the prediction.
         clip: whether to clip the predicted output to the maximum and
             minimum of the target values of the train set: `[y_min, y_max]`.
-
     """
 
-    # TODO: allow any metric that scipy.spatial.distance.pdist likes
-    # TODO: allow any solver that scipy.optimize.minimize likes
-    # TODO: define an index interface
-
     n_neighbors: int = 3
-    n_derivative_neighbors: int = 32
+    n_derivative_neighbors: int = -1
     order: str = "1"
     fit_intercept: bool = False
     solver: Union[str, solver_mod.Solver] = "linear_regression"
@@ -86,6 +97,7 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
     clip: bool = False
 
     def __post_init__(self):
+
         self.nn_index: nn_index.BaseIndex
 
         if isinstance(self.index, str):
@@ -113,7 +125,9 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
         self.derivatives_ = []
 
         for v in X_train:
-            indices, _ = self.nn_index.query_knn(v, self.n_derivative_neighbors + 1)
+            indices, _ = self.nn_index.query_knn(
+                v, self.n_derivative_neighbors + 1
+            )
             # ignore the first index as its the queried point itself
             indices = indices[1:]
 
@@ -126,7 +140,7 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
         if self.scaling is None:
             return scaling_mod.NoScaling()
         elif isinstance(self.scaling, str):
-            if self.scaling == "None":
+            if self.scaling in ["None", 'no_scaling']:
                 return scaling_mod.NoScaling()
             elif self.scaling == "learned":
                 return scaling_mod.LearnedScaling(**self.scaling_kwargs)
@@ -141,6 +155,9 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
         m, n = X_train.shape
         self.n = n
         self.m = m
+
+        if self.n_derivative_neighbors == -1:
+            self.n_derivative_neighbors = 3 * self.n
 
         if isinstance(self.solver, str):
             self.solver_ = create_solver(self.solver)
@@ -222,7 +239,9 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
         order: Optional[str] = None,
     ) -> np.ndarray:
 
-        nn_indices, _ = self.nn_index.query_knn(x, n_neighbors or self.n_derivative_neighbors)
+        nn_indices, _ = self.nn_index.query_knn(
+            x, n_neighbors or self.n_derivative_neighbors
+        )
         ys = self.y_train[nn_indices] - y
         order = order or self.order
 
@@ -310,7 +329,9 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
                 nn = self.X_train[indices[i]]
                 nn_y = self.y_train[indices[i]]
                 # get the neighbhors of this neighbhor
-                nn_indices, _ = self.nn_index.query_knn(nn, self.n_derivative_neighbors)
+                nn_indices, _ = self.nn_index.query_knn(
+                    nn, self.n_derivative_neighbors
+                )
                 nn_indices = nn_indices[1:]  # drop the neighbor itself
                 # Δx = X_{nn} - X_{i}
                 gamma = self._estimate_derivatives(nn, nn_y)

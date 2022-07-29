@@ -22,7 +22,6 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 
 annoy = "^1.17.0"
-matplotlib = "^3.5.2"
 numpy = "^1.21.0"
 python = ">=3.7,<3.11"
 scikit-learn = "^1.0.0"
