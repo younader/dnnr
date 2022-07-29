@@ -1,7 +1,6 @@
 # DNNR: Differential Nearest Neighbors Regression
 
 [![Build Status](https://github.com/younader/dnnr/actions/workflows/dev.yml/badge.svg)](https://github.com/younader/dnnr/actions/workflows/dev.yml)
-[![codecov](https://codecov.io/gh/younader/dnnr/branch/main/graphs/badge.svg)](https://codecov.io/github/younader/dnnr)
 
 Implementation of ["DNNR: Differential Nearest Neighbors Regression"](https://proceedings.mlr.press/v162/nader22a.html).
 
@@ -9,7 +8,7 @@ Whereas KNN regression only uses the averaged value, DNNR also uses the gradient
 
 ![KNN and DNNR Overview Image](knn_dnnr_overview.png)
 
-Our implementation is written using `numpy`, `sklearn` and the [`annoy`](https://github.com/spotify/annoy) approximate nearest neighbor index. Using `annoy` is optional, as you can also use `sklearn`'s KDTree as index.
+Our implementation uses `numpy`, `sklearn`, and the [`annoy`](https://github.com/spotify/annoy) approximate nearest neighbor index. Using `annoy` is optional, as you can also use `sklearn`'s KDTree as index. We support Python 3.7 to 3.10.
 
 # 🚀 Quickstart
 
@@ -33,7 +32,7 @@ model.fit(x,y)
 model.predict([[1.5]])
 ```
 
-Also checkout our [Jupiter Notebook](./examples/dnnr_tutorial.ipynb) on how to use DNNR. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/younader/dnnr/blob/main/examples/dnnr_tutorial.ipynb)
+Also check out our [Jupiter Notebook](./examples/dnnr_tutorial.ipynb) on how to use DNNR. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/younader/dnnr/blob/main/examples/dnnr_tutorial.ipynb)
 
 # 📊 Hyperparameters
 
@@ -42,32 +41,27 @@ DNNR has three main hyperparameters:
 * `n_neighbors`: number of nearest neighbors to use. The default value of
       `3` is usually a good choice.
 * `n_derivative_neighbors`: number of neighbors used in approximating the
-      derivatives. As a default value, we choose `3 * dim` where `dim` is
-      the dimension of the input data.
+      derivatives. As a default value, we choose `3 * dim`, where `dim` is
+      the input dimension.
 * `order`: Taylor approximation order, one of `1`, `2`, `2diag`, `3diag`.
       The preferable option here is `1`. Sometimes `2diag` can deliver
       small improvements. `2` and `3diag` are implemented but usually do
       not yield significant improvements.
 
-To archive best performance, we would recommend a hyperparameter search over the `n_derivative_neighbors` variable.
+We recommend a hyperparameter search over the `n_derivative_neighbors` variable to archive the best performance.
 
 For all options, see the documentation of the [DNNR class](https://younader.github.io/dnnr/site/api/#dnnr.dnnr.DNNR).
 
 #  🛠 Development Installation
 
 ```bash
-mkdir dnnr             # this directory will hold the code, data and venv
-cd dnnr
-python3 -m venv venv     # create and load the virtual environment
-source venv/bin/activate
-# create the data folder
-mkdir data
+python3 -m venv venv      # create a virtual environment
+source venv/bin/activate  # and load it
 git clone https://github.com/younader/dnnr.git
 cd dnnr
 pip install -U pip wheel poetry
 poetry install
-
-make test                          # or run the tests
+make test                 # to run the tests
 ```
 
 # 📄 Citation
