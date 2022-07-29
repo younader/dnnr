@@ -6,9 +6,6 @@ from sklearn.linear_model import Lasso, LinearRegression, Ridge
 
 
 class Solver(ABC):
-    def __init__(self):
-        pass
-
     @abstractmethod
     def solve(self, a: np.ndarray, b: np.ndarray, w: np.ndarray) -> np.ndarray:
         """Returns the solution of a linear equation.
@@ -26,7 +23,6 @@ class Solver(ABC):
         Returns:
             The solution of the equation.
         """
-        pass
 
 
 class SKLinearRegression(Solver):
@@ -57,9 +53,6 @@ class SKLasso(Solver):
 
 
 class ScipyLsqr(Solver):
-    def __init__(self):
-        pass
-
     def solve(self, a: np.ndarray, b: np.ndarray, w: np.ndarray) -> np.ndarray:
         C = np.diag(w)
         X = a.T @ C @ a
@@ -68,9 +61,6 @@ class ScipyLsqr(Solver):
 
 
 class NPSolver(Solver):
-    def __init__(self):
-        pass
-
     def solve(self, a: np.ndarray, b: np.ndarray, w: np.ndarray) -> np.ndarray:
         C = np.diag(w)
         w_wlr = np.linalg.pinv(a.T @ C @ a) @ (a.T @ C @ b)

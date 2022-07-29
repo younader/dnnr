@@ -21,7 +21,6 @@ class BaseIndex(sklearn.base.BaseEstimator, metaclass=abc.ABCMeta):
                 index.
             **kwargs: Additional arguments passed to the index.
         """
-        pass
 
     @abc.abstractmethod
     def query_knn(self, v: np.ndarray, k: int) -> tuple[np.ndarray, np.ndarray]:
@@ -34,7 +33,6 @@ class BaseIndex(sklearn.base.BaseEstimator, metaclass=abc.ABCMeta):
         Returns:
             A tuple of (indices, distances) of the k nearest neighbors of v.
         """
-        pass
 
 
 @dataclasses.dataclass

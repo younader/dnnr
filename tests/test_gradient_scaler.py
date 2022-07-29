@@ -263,7 +263,7 @@ def test_scaling_on_california():
     ]
     for opt, opt_kwargs in optimizers:
         scaler = scaling.NumpyInputScaling(
-            n_epochs=1,
+            n_epochs=2,
             fail_on_nan=True,
             show_progress=True,
             random=random.Random(0),
