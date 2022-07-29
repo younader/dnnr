@@ -47,6 +47,7 @@ jobs:
 
       - name: Show tox version
         run: |
+          export PYTHONIOENCODING=utf8
           tox --version
       - name: test with tox
         run: |
