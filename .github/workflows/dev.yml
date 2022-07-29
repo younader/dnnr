@@ -47,9 +47,9 @@ jobs:
 
       - name: Show tox version
         run: |
-          export PYTHONIOENCODING=utf8
+          python -c 'import sys; print(sys.getdefaultencoding())'
           tox --version
-      - name: test with tox
+      - name: Test with tox
         run: |
           tox
         env:
