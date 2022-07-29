@@ -272,11 +272,9 @@ def test_scaling_on_california():
             optimizer_params=opt_kwargs,
         )
 
-        scaler.fit(X_train, y_train, val_size=int(0.2 * len(X_train)))
-
-        scaled_model = dnnr.DNNR()
-        scaled_model.fit(scaler.transform(X_train), y_train)
-        scaled_r2 = scaled_model.score(scaler.transform(X_test), y_test)
+        scaled_model = dnnr.DNNR(scaling=scaler)
+        scaled_model.fit(X_train, y_train)
+        scaled_r2 = scaled_model.score(X_test, y_test)
 
         print('-' * 80)
         print(opt, 'Scaling data')
