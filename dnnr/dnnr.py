@@ -51,7 +51,7 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
 
     Args:
         n_neighbors: number of nearest neighbors to use.
-        n_approx: number of neighbors used in approximating the derivatives.
+        n_derivative_neighbors: number of neighbors used in approximating the derivatives.
         order: Taylor approximation order, one of `1`, `2`, `2diag`, `3diag`.
         fit_intercept: if True, the intercept is estimated. Otherwise, the
             point's ground truth label is used.
@@ -74,7 +74,7 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
     # TODO: define an index interface
 
     n_neighbors: int = 3
-    n_approx: int = 32
+    n_derivative_neighbors: int = 32
     order: str = "1"
     fit_intercept: bool = False
     solver: Union[str, solver_mod.Solver] = "linear_regression"
@@ -113,7 +113,7 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
         self.derivatives_ = []
 
         for v in X_train:
-            indices, _ = self.nn_index.query_knn(v, self.n_approx + 1)
+            indices, _ = self.nn_index.query_knn(v, self.n_derivative_neighbors + 1)
             # ignore the first index as its the queried point itself
             indices = indices[1:]
 
@@ -129,7 +129,7 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
             if self.scaling == "None":
                 return scaling_mod.NoScaling()
             elif self.scaling == "learned":
-                return scaling_mod.NumpyInputScaling(**self.scaling_kwargs)
+                return scaling_mod.LearnedScaling(**self.scaling_kwargs)
             else:
                 raise ValueError("Unknown scaling method")
         else:
@@ -222,7 +222,7 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
         order: Optional[str] = None,
     ) -> np.ndarray:
 
-        nn_indices, _ = self.nn_index.query_knn(x, n_neighbors or self.n_approx)
+        nn_indices, _ = self.nn_index.query_knn(x, n_neighbors or self.n_derivative_neighbors)
         ys = self.y_train[nn_indices] - y
         order = order or self.order
 
@@ -310,7 +310,7 @@ class DNNR(sklearn.base.BaseEstimator, sklearn.base.RegressorMixin):
                 nn = self.X_train[indices[i]]
                 nn_y = self.y_train[indices[i]]
                 # get the neighbhors of this neighbhor
-                nn_indices, _ = self.nn_index.query_knn(nn, self.n_approx)
+                nn_indices, _ = self.nn_index.query_knn(nn, self.n_derivative_neighbors)
                 nn_indices = nn_indices[1:]  # drop the neighbor itself
                 # Δx = X_{nn} - X_{i}
                 gamma = self._estimate_derivatives(nn, nn_y)
