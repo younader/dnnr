@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import abc
 import dataclasses
-from typing import Any, TypeVar, Union
+import tempfile
+from typing import Any, Optional, TypeVar
 
 import numpy as np
 import sklearn.base
@@ -57,11 +58,13 @@ class KDTreeIndex(BaseIndex):
 class AnnoyIndex(BaseIndex):
     metric: str = "euclidean"
     n_trees: int = 50
+    n_features: Optional[int] = None
 
     def fit(self, x: np.ndarray) -> None:
         import annoy
 
-        self.index = annoy.AnnoyIndex(x.shape[1], self.metric)
+        self.n_features = x.shape[1]
+        self.index = annoy.AnnoyIndex(self.n_features, self.metric)
 
         for i, v in zip(range(len(x)), x):
             self.index.add_item(i, v)
@@ -76,8 +79,31 @@ class AnnoyIndex(BaseIndex):
         )
         return indices, distances
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
 
-def get_index_class(index: Union[type[BaseIndex], str]) -> type[BaseIndex]:
+        with tempfile.TemporaryDirectory() as dir:
+            fname = dir + "/index.ann"
+            self.index.save(fname)
+            with open(fname, "rb") as f:
+                state["index"] = f.read()
+        return state
+
+    def __setstate__(self, state):
+        import annoy
+
+        index_bytes = state.pop("index")
+        self.index = annoy.AnnoyIndex(state['n_features'], state['metric'])
+
+        with tempfile.NamedTemporaryFile() as f:
+            f.write(index_bytes)
+            f.flush()
+            self.index.load(f.name)
+
+        self.__dict__.update(state)
+
+
+def get_index_class(index: type[BaseIndex] | str) -> type[BaseIndex]:
     """Returns the corresponding index class based on the passed string.
 
     Args:

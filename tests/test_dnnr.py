@@ -1,4 +1,6 @@
+import pickle
 import random
+from pathlib import Path
 
 import numpy as np
 
@@ -104,3 +106,31 @@ def test_dnnr_point_analysis() -> None:
     results = model.point_analysis(x[:3])
 
     assert isinstance(results[0], dnnr.dnnr.DNNRPrediction)
+
+
+def test_dnnr_pickle(tmp_path: Path) -> None:
+    np.random.seed(0)
+    x = np.random.normal(size=(500, 10))
+    w = 0.2 * np.random.normal(size=(10, 1)) + 2.0
+    # makes the last 5 dimensions unimportant
+    w[5:] = 0
+    y = x @ w + (0.2 * x @ w) ** 2
+    y = y[:, 0]
+
+    hyperparams = [
+        dict(order='1', index='kd_tree', scaling='learned'),
+        dict(order='1', index='annoy', scaling='learned'),
+        dict(order='2diag', index='annoy', scaling='no_scaling'),
+    ]
+    for param in hyperparams:
+        model = dnnr.DNNR(**param)  # type: ignore
+        model.fit(x, y)
+
+        fname = f"test_{param['index']}_{param['order']}_{param['scaling']}.pkl"
+        with open(tmp_path / fname, 'wb') as f:
+            pickle.dump(model, f)
+
+        with open(tmp_path / fname, 'rb') as fr:
+            loaded_model = pickle.load(fr)
+
+        assert np.allclose(model.predict(x[:10]), loaded_model.predict(x[:10]))
