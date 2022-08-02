@@ -441,11 +441,11 @@
 <!-- BEGIN INCLUDE ../README.md -->
 <h2 id="dnnr-differential-nearest-neighbors-regression">DNNR: Differential Nearest Neighbors Regression<a class="headerlink" href="#dnnr-differential-nearest-neighbors-regression" title="Permanent link">&para;</a></h2>
 <p><a href="https://github.com/younader/dnnr/actions/workflows/dev.yml"><img alt="Build Status" src="https://github.com/younader/dnnr/actions/workflows/dev.yml/badge.svg" /></a></p>
-<p>Implementation of <a href="https://proceedings.mlr.press/v162/nader22a.html">"DNNR: Differential Nearest Neighbors Regression"</a>.</p>
-<p><strong>DNNR pushes KNN regression to a gradient boosting performance!</strong></p>
+<p>[<a href="https://proceedings.mlr.press/v162/nader22a.html">Paper</a>][[Documentation](https://younader.github.io/dnnr/)]</p>
+<p>The Python package of <a href="https://proceedings.mlr.press/v162/nader22a.html">differential nearest neighbors regression (DNNR)</a>: <strong>Raising KNN-regression to levels of gradient boosting methods.</strong></p>
 <p>Whereas KNN regression only uses the averaged value, DNNR also uses the gradient or even higher-order derivatives:</p>
 <p><img alt="KNN and DNNR Overview Image" src="../knn_dnnr_overview.png" /></p>
-<p>Our implementation uses <code>numpy</code>, <code>sklearn</code>, and the <a href="https://github.com/spotify/annoy"><code>annoy</code></a> approximate nearest neighbor index. Using <code>annoy</code> is optional, as you can also use <code>sklearn</code>'s KDTree as index. We support Python 3.7 to 3.10.</p>
+<p>Our implementation uses <code>numpy</code>, <code>sklearn</code>, and the <a href="https://github.com/spotify/annoy"><code>annoy</code></a> approximate nearest neighbor index. Using <code>annoy</code> is optional, as you can also use <code>sklearn</code>'s KDTree as index. We support Python 3.7 to 3.10.</p>
 <h2 id="-quickstart">🚀 Quickstart<a class="headerlink" href="#-quickstart" title="Permanent link">&para;</a></h2>
 <p>To install this project, run:</p>
 <div class="highlight"><pre><span></span><code>pip install dnnr
@@ -459,7 +459,7 @@
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">DNNR</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_derivative_neighbors</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">([[</span><span class="mf">1.5</span><span class="p">]])</span>    
+<span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">([[</span><span class="mf">1.5</span><span class="p">]])</span>
 <span class="c1"># Will output: 0.25</span>
 </code></pre></div>
 <p>Also check out our <a href="../examples/dnnr_tutorial.ipynb">Jupiter Notebook</a> on how to use DNNR. <a href="https://colab.research.google.com/github/younader/dnnr/blob/main/examples/dnnr_tutorial.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
@@ -477,7 +477,7 @@
       not yield significant improvements.</li>
 </ul>
 <p>We recommend a hyperparameter search over the <code>n_derivative_neighbors</code> variable to archive the best performance.</p>
-<p>For all options, see the documentation of the <a href="https://younader.github.io/dnnr/site/api/#dnnr.dnnr.DNNR">DNNR class</a>.</p>
+<p>For all options, see the <a href="https://younader.github.io/dnnr/api/#dnnr.dnnr.DNNR">documentation of the DNNR class</a>.</p>
 <h2 id="-development-installation">🛠 Development Installation<a class="headerlink" href="#-development-installation" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>python3 -m venv venv      <span class="c1"># create a virtual environment</span>
 <span class="nb">source</span> venv/bin/activate  <span class="c1"># and load it</span>
