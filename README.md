@@ -5,7 +5,7 @@
 [[Paper](https://proceedings.mlr.press/v162/nader22a.html)]
 [[Documentation](https://younader.github.io/dnnr/)]
 
-The Python package of [differential nearest neighbors regression (DNNR)](https://proceedings.mlr.press/v162/nader22a.html): **Raising KNN-regression to levels of gradient boosting method.**
+The Python package of [differential nearest neighbors regression (DNNR)](https://proceedings.mlr.press/v162/nader22a.html): **Raising KNN-regression to levels of gradient boosting methods.**
 
 Whereas KNN regression only uses the averaged value, DNNR also uses the gradient or even higher-order derivatives:
 
@@ -58,7 +58,7 @@ DNNR has three main hyperparameters:
 
 We recommend a hyperparameter search over the `n_derivative_neighbors` variable to archive the best performance.
 
-For all options, see the documentation of the [DNNR class](https://younader.github.io/dnnr/api/#dnnr.dnnr.DNNR).
+For all options, see the [documentation of the DNNR class](https://younader.github.io/dnnr/api/#dnnr.dnnr.DNNR).
 
 #  🛠 Development Installation
 
