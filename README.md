@@ -2,15 +2,16 @@
 
 [![Build Status](https://github.com/younader/dnnr/actions/workflows/dev.yml/badge.svg)](https://github.com/younader/dnnr/actions/workflows/dev.yml)
 
-Implementation of ["DNNR: Differential Nearest Neighbors Regression"](https://proceedings.mlr.press/v162/nader22a.html).
+[[Paper](https://proceedings.mlr.press/v162/nader22a.html)]
+[[Documentation](https://younader.github.io/dnnr/)]
 
-**DNNR pushes KNN regression to a gradient boosting performance!**
+The Python package of [differential nearest neighbors regression (DNNR)](https://proceedings.mlr.press/v162/nader22a.html): **Raising KNN-regression to levels of gradient boosting method.**
 
 Whereas KNN regression only uses the averaged value, DNNR also uses the gradient or even higher-order derivatives:
 
 ![KNN and DNNR Overview Image](knn_dnnr_overview.png)
 
-Our implementation uses `numpy`, `sklearn`, and the [`annoy`](https://github.com/spotify/annoy) approximate nearest neighbor index. Using `annoy` is optional, as you can also use `sklearn`'s KDTree as index. We support Python 3.7 to 3.10.
+Our implementation uses `numpy`, `sklearn`, and the [`annoy`](https://github.com/spotify/annoy) approximate nearest neighbor index. Using `annoy` is optional, as you can also use `sklearn`'s KDTree as index. We support Python 3.7 to 3.10.
 
 
 # 🚀 Quickstart
