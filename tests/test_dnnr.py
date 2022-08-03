@@ -134,3 +134,40 @@ def test_dnnr_pickle(tmp_path: Path) -> None:
             loaded_model = pickle.load(fr)
 
         assert np.allclose(model.predict(x[:10]), loaded_model.predict(x[:10]))
+
+
+def test_binary_inputs():
+    np.random.seed(0)
+    x = np.random.normal(size=(500, 10))
+    w = 0.2 * np.random.normal(size=(10, 1)) + 2.0
+    # makes the last 5 dimensions unimportant
+    y = x @ w + (0.2 * x @ w) ** 2
+    y = y[:, 0]
+
+    x = (x > 0).astype(np.float32)
+
+    model = dnnr.DNNR(order='1', scaling='learned')
+    model.fit(x, y)
+    diff = np.abs(model.predict(x) - y).mean()
+    assert diff < 2.1
+
+
+def test_no_variability_in_target():
+    np.random.seed(0)
+    x = np.random.normal(size=(500, 10))
+    x = (x > 0).astype(np.float32)
+    y = np.ones(500)
+    model = dnnr.DNNR(order='1', scaling='learned')
+    model.fit(x, y)
+    diff = np.abs(model.predict(x) - y).mean()
+    assert diff < 0.1
+
+
+def test_no_variability_in_inputs():
+    np.random.seed(0)
+    x = np.ones((500, 10))
+    y = np.ones((500))
+    model = dnnr.DNNR(order='1', scaling='learned')
+    model.fit(x, y)
+    diff = np.abs(model.predict(x) - y).mean()
+    assert diff < 0.1
