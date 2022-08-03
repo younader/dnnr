@@ -344,6 +344,14 @@ class LearnedScaling(InputScaling):
         vq = q - np.mean(q)
         vh = h - np.mean(h)
 
+        if np.allclose(vq, 0) or np.allclose(vh, 0):
+            # Either vq are all equal (this can be the case if the target value
+            # is the same for all samples). Or vh are all equal to 0, which can
+            # happen if the nearest neighbors are all the same. In any case, we
+            # can't compute the cosine similarity in this case and therefore
+            # return 0.
+            return np.array([0.0]), np.zeros(scaling.shape[1])
+
         cossim = self._cossim(vq, vh)
         cost = -cossim
         # Backward path
