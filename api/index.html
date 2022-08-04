@@ -3140,6 +3140,14 @@ LearnedScaling            (<a class="autorefs autorefs-internal" title="dnnr.sca
         <span class="n">vq</span> <span class="o">=</span> <span class="n">q</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
         <span class="n">vh</span> <span class="o">=</span> <span class="n">h</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">vq</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">vh</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="c1"># Either vq are all equal (this can be the case if the target value</span>
+            <span class="c1"># is the same for all samples). Or vh are all equal to 0, which can</span>
+            <span class="c1"># happen if the nearest neighbors are all the same. In any case, we</span>
+            <span class="c1"># can&#39;t compute the cosine similarity in this case and therefore</span>
+            <span class="c1"># return 0.</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">scaling</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
         <span class="n">cossim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cossim</span><span class="p">(</span><span class="n">vq</span><span class="p">,</span> <span class="n">vh</span><span class="p">)</span>
         <span class="n">cost</span> <span class="o">=</span> <span class="o">-</span><span class="n">cossim</span>
         <span class="c1"># Backward path</span>
