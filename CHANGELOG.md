@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2] - 2022-08-04
+
+### Fixed
+
+* Fix handling of zero gradient neighborhoods. 
+* test update to cover bad data
+
 ## [0.1.1] - 2022-08-02
 
 ### Added
